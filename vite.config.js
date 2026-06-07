@@ -4,6 +4,8 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  /** Project Pages URL: https://jelleAtEijkelkamp.github.io/stunning-tribble/ */
+  base: process.env.BASE_PATH || '/',
   root: '.',
   publicDir: 'public',
   build: {
