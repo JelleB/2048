@@ -14,9 +14,15 @@ export default defineConfig(({ command }) => ({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    /** Source entry; root index.html on main is the production bundle for Pages. */
+    rollupOptions: {
+      input: {
+        index: 'index.source.html',
+      },
+    },
   },
   server: {
     port: 5173,
-    open: false,
+    open: '/index.source.html',
   },
 }));

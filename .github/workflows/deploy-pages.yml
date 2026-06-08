@@ -10,6 +10,7 @@ on:
       - 'assets/**'
       - 'index.html'
       - '.nojekyll'
+      - 'index.source.html'
   workflow_dispatch:
 
 permissions:
@@ -38,6 +39,9 @@ jobs:
         run: npm run build
         env:
           BASE_PATH: /stunning-tribble/
+
+      - name: Normalize dist/index.html from Vite source entry
+        run: cp dist/index.source.html dist/index.html
 
       - name: Verify production bundle (not raw /src/main.js)
         shell: bash
