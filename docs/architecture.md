@@ -134,7 +134,7 @@ npm run build   → dist/ (BASE_PATH=/stunning-tribble/ in CI)
 npm test        → Vitest
 ```
 
-GitHub Actions (`.github/workflows/deploy-pages.yml`): `npm ci` → build with `BASE_PATH` → `actions/deploy-pages`. Development happens on branch **`dev`**; merge to **`main`** to publish.
+GitHub Actions (`.github/workflows/deploy-pages.yml`): `npm ci` → production build (`--base /stunning-tribble/`) → `actions/deploy-pages`. The workflow also syncs `dist/` into `site/` so branch-based Pages (`main` / `site`) serves the bundled app, not raw `/src/main.js`. **Pages source:** prefer **GitHub Actions**; if using branch deploy, set folder to **`/site`**, not repository root.
 
 ## Extension points
 

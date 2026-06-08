@@ -1,13 +1,15 @@
-# Builds the Vite app and publishes dist/ to GitHub Pages on every push to main.
+# Builds dist/ and publishes to GitHub Pages (Actions artifact + docs/ fallback).
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'site/**'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -32,6 +34,27 @@ jobs:
         run: npm run build
         env:
           BASE_PATH: /stunning-tribble/
+
+      - name: Verify production bundle (not raw /src/main.js)
+        shell: bash
+        run: |
+          grep -q '/stunning-tribble/assets/' dist/index.html
+          if grep -q '/src/main.js' dist/index.html; then
+            echo 'dist/index.html still references dev entry /src/main.js'
+            exit 1
+          fi
+
+      - name: Sync built site to site/ for branch-based Pages fallback
+        run: |
+          rm -rf site
+          mkdir -p site
+          cp -r dist/. site/
+
+      - name: Commit site/ if changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: sync GitHub Pages build to site/'
+          file_pattern: site/**
 
       - uses: actions/upload-pages-artifact@v3
         with:

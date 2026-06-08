@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --base /stunning-tribble/",
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

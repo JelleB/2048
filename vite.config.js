@@ -3,9 +3,12 @@
  */
 import { defineConfig } from 'vite';
 
-export default defineConfig({
-  /** Project Pages URL: https://jelleAtEijkelkamp.github.io/stunning-tribble/ */
-  base: process.env.BASE_PATH || '/',
+export default defineConfig(({ command }) => ({
+  /**
+   * Project Pages: https://jelleAtEijkelkamp.github.io/stunning-tribble/
+   * Dev server uses `/`; production build uses `/stunning-tribble/` (see package.json build script).
+   */
+  base: command === 'serve' ? '/' : process.env.BASE_PATH || '/stunning-tribble/',
   root: '.',
   publicDir: 'public',
   build: {
@@ -16,4 +19,4 @@ export default defineConfig({
     port: 5173,
     open: false,
   },
-});
+}));
