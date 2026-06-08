@@ -1,11 +1,15 @@
-# Builds dist/ and publishes to GitHub Pages (Actions artifact + docs/ fallback).
+# Builds dist/ and publishes to GitHub Pages.
+# Also commits production index.html + assets/ to repo root on main, because
+# pages-build-deployment serves the branch root (not only the Actions artifact).
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
     paths-ignore:
-      - 'site/**'
+      - 'assets/**'
+      - 'index.html'
+      - '.nojekyll'
   workflow_dispatch:
 
 permissions:
@@ -44,17 +48,18 @@ jobs:
             exit 1
           fi
 
-      - name: Sync built site to site/ for branch-based Pages fallback
+      - name: Sync built site to repository root for branch Pages deploy
         run: |
-          rm -rf site
-          mkdir -p site
-          cp -r dist/. site/
+          cp dist/index.html index.html
+          rm -rf assets
+          cp -r dist/assets assets
+          cp dist/.nojekyll .nojekyll
 
-      - name: Commit site/ if changed
+      - name: Commit production root files if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'chore: sync GitHub Pages build to site/'
-          file_pattern: site/**
+          commit_message: 'chore: sync production index.html and assets for GitHub Pages'
+          file_pattern: index.html assets/** .nojekyll
 
       - uses: actions/upload-pages-artifact@v3
         with:
