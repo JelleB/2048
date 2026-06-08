@@ -98,6 +98,39 @@ See `tests/test_gameStorage.js` for `createMemoryStorage()`.
 - Do not weaken assertions or mock away the code under test to force green.
 - Cover happy path first, then edges and rejections the story cares about.
 
+## Regression tests (reported bugs)
+
+Whenever a user reports a bug, treat the fix as TDD — but the **test comes from the diagnosis**, not from a feature spec.
+
+### Workflow
+
+1. **Reproduce** — Confirm the bug (console error, wrong score, bad restore, etc.). Note exact steps or inputs.
+2. **Diagnose** — Find root cause in `src/logic/`, `src/persistence/`, or (less often) scene glue. Name the faulty assumption (e.g. “Phaser `scene.start` data is not a reliable save payload”).
+3. **Red — write regression test(s)** — Add one or more `it('…')` cases that **fail on the broken behavior** and pass once fixed. Run `npm test`; failure must match the diagnosed issue, not unrelated noise.
+4. **Green** — Minimal fix until the new test(s) and all existing tests pass.
+5. **Refactor** — Only if needed; keep regression tests green.
+
+### What to capture in the test
+
+- **Inputs** that triggered the bug (grid layout, saved JSON, `rng`, mode).
+- **Expected outcome** after the fix (no throw, correct grid/score, cookie restored, etc.).
+- **Name** the test after the bug symptom or rule (`ignores snapshots with a missing grid`, `loads saved games from cookies instead of scene data`).
+
+Prefer testing at the **lowest layer** that expresses the bug:
+
+| Bug layer | Test location |
+|-----------|----------------|
+| Merge, spawn, path rules | `tests/test_Board*.js`, `test_pathMerge.js`, … |
+| Save/load, cookies | `tests/test_gameStorage.js`, `test_cookies.js`, `test_gamePersistence.js` |
+| Layout / hit areas | `tests/test_layout.js` |
+| Phaser-only (input, tweens) | Manual QA + comment in PR; extract pure helper if repeated |
+
+Do **not** fix first and add a test later — the regression test proves the diagnosis and prevents the same bug from returning.
+
+### Example from this repo
+
+Resume crash on load: `create()` received an empty object from Phaser, `grid` was `undefined`, `setGrid` threw. Regression coverage: `test_gameStorage.js` (`ignores snapshots with a missing grid`) and `test_gamePersistence.js` (restore from cookies, not scene launch data).
+
 ## Coverage by topic
 
 ### `test_Board2048.js` — classic 2048
