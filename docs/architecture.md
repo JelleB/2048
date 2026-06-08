@@ -124,7 +124,7 @@ Cookie-backed client storage (`src/persistence/`). No server.
 | Path / gravity / spawn | `test_pathMerge.js`, `test_gravity.js`, `test_startTiles.js` | Pure functions |
 | Persistence | `test_gameStorage.js` | In-memory adapter, no `document` |
 
-Scenes are not unit-tested. Manual QA: menu, both modes, mobile viewport, resume after refresh (see [AGENTS.md](../AGENTS.md)).
+Scenes are not unit-tested. Manual QA: menu, both modes, mobile viewport, resume after refresh (see [AGENTS.md](../AGENTS.md)). Full coverage map and how to add tests: [testing.md](./testing.md).
 
 ## Build and deploy
 

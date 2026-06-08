@@ -21,6 +21,8 @@ No Python venv in this repo (JS only).
 
 ## TDD workflow (required for logic changes)
 
+**Use `/test-driven-development` whenever possible** — especially for `src/logic/` and `src/persistence/`. See [docs/testing.md](./docs/testing.md) for coverage map and how to add tests.
+
 Follow Red → Green → Refactor:
 
 1. **Red** — Add or change a test in `tests/test_*.js` for one behavior. Run `npm test`; expect failure.
@@ -79,6 +81,7 @@ Test naming: `test_Board2048.js`, `test_Board2248.js` mirror `src/logic/Board204
 
 ## References
 
+- [docs/testing.md](./docs/testing.md) — coverage map, how to write tests, TDD patterns
 - [docs/architecture.md](./docs/architecture.md) — layers, scene flow, persistence, deploy
 - [plan.md](./plan.md) — full design and milestones
 - [Phaser 3 docs](https://photonstorm.github.io/phaser3-docs/)
