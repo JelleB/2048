@@ -79,6 +79,7 @@ Test naming: `test_Board2048.js`, `test_Board2248.js` mirror `src/logic/Board204
 
 ## References
 
+- [docs/architecture.md](./docs/architecture.md) — layers, scene flow, persistence, deploy
 - [plan.md](./plan.md) — full design and milestones
 - [Phaser 3 docs](https://photonstorm.github.io/phaser3-docs/)
 - [Vitest](https://vitest.dev/)
