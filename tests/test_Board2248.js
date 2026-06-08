@@ -317,4 +317,134 @@ describe('Board2248', () => {
     expect(board.score).toBe(4);
     expect(board.cell(0, 1)).toBe(0);
   });
+
+  it('applyPathMerge merges without refilling the board', () => {
+    board.setGrid([
+      [2, 2, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ]);
+    const ok = board.applyPathMerge([
+      { row: 0, col: 0 },
+      { row: 0, col: 1 },
+    ]);
+    expect(ok).toBe(true);
+    expect(board.cell(0, 1)).toBe(4);
+    expect(board.countTiles()).toBe(1);
+  });
+
+  it('canExtendPath rejects empty cells and invalid ladders', () => {
+    board.setGrid([
+      [4, 8, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ]);
+    expect(board.canExtendPath([{ row: 0, col: 0 }], { row: 0, col: 2 })).toBe(false);
+    expect(board.canExtendPath([{ row: 0, col: 0 }], { row: 0, col: 1 })).toBe(false);
+  });
+
+  it('isValidPath rejects out-of-bounds and empty cells', () => {
+    board.setGrid([
+      [2, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ]);
+    expect(
+      board.isValidPath([
+        { row: 0, col: 0 },
+        { row: -1, col: 0 },
+      ]),
+    ).toBe(false);
+    expect(
+      board.isValidPath([
+        { row: 0, col: 0 },
+        { row: 0, col: 1 },
+      ]),
+    ).toBe(false);
+  });
+
+  it('spawnAtTopRandomColumn returns false when board is full', () => {
+    board.start();
+    expect(board.spawnAtTopRandomColumn()).toBe(false);
+  });
+
+  it('spawnAtTopRandomColumn places below occupied top cells in a column', () => {
+    board = new Board2248({ rng: () => 0 });
+    board.setGrid([
+      [4, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ]);
+    expect(board.spawnAtTopRandomColumn()).toBe(true);
+    expect(board.cell(1, 0)).toBe(2);
+    expect(board.cell(0, 0)).toBe(4);
+  });
+
+  it('applyTierNineTwosPurge delegates to applySpawnPoolPurge', () => {
+    board.setGrid([
+      [512, 2, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ]);
+    expect(board.applyTierNineTwosPurge()).toBe(2);
+  });
+
+  it('spawnAtRandom fills a random empty cell', () => {
+    board.setGrid([
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [4, 0, 0, 0, 0],
+    ]);
+    expect(board.spawnAtRandom()).toBe(true);
+    expect(board.countTiles()).toBe(2);
+  });
+
+  it('settleGravity drops tiles within columns', () => {
+    board.setGrid([
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [8, 0, 0, 0, 0],
+      [0, 2, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ]);
+    board.settleGravity();
+    expect(board.cell(4, 0)).toBe(8);
+    expect(board.cell(4, 1)).toBe(2);
+  });
+
+  it('tryRollbackPath returns null for single-cell paths', () => {
+    expect(board.tryRollbackPath([{ row: 0, col: 0 }], { row: 0, col: 0 })).toBeNull();
+  });
+
+  it('canLink rejects zero values', () => {
+    expect(board.canLink(0, 0)).toBe(false);
+  });
+
+  it('pathValues reads tile values along a path', () => {
+    board.setGrid([
+      [2, 4, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ]);
+    expect(
+      board.pathValues([
+        { row: 0, col: 0 },
+        { row: 0, col: 1 },
+      ]),
+    ).toEqual([2, 4]);
+  });
 });

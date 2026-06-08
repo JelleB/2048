@@ -59,4 +59,12 @@ describe('path merge rules', () => {
       scoreDelta: 92,
     });
   });
+
+  it('rejects empty, zero, and single-value paths', () => {
+    expect(isValidPartialMergePath([])).toBe(false);
+    expect(isValidPartialMergePath([0, 2])).toBe(false);
+    expect(isValidPartialMergePath([4])).toBe(true);
+    expect(isValidMergePath([4])).toBe(false);
+    expect(computePathMergeScore([4])).toBeNull();
+  });
 });

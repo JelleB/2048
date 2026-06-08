@@ -129,6 +129,57 @@ describe('gameStorage', () => {
     expect(board.score).toBe(0);
   });
 
+  it('createSnapshot deep-copies grid rows', () => {
+    const grid = [[2, 0], [0, 4]];
+    const snap = createSnapshot('2048', grid, 10, false);
+    grid[0][0] = 999;
+    expect(snap.grid[0][0]).toBe(2);
+  });
+
+  it('rejects invalid tile values in saved grids', () => {
+    expect(
+      parseSavedGame(
+        JSON.stringify({
+          version: 1,
+          mode: '2048',
+          grid: [
+            [-1, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+          ],
+          score: 0,
+          gameOver: false,
+        }),
+      ),
+    ).toBeNull();
+  });
+
+  it('rejects negative scores and wrong grid dimensions', () => {
+    expect(
+      parseSavedGame(
+        JSON.stringify({
+          version: 1,
+          mode: '2048',
+          grid: [[2, 2, 2, 2], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+          score: -1,
+          gameOver: false,
+        }),
+      ),
+    ).toBeNull();
+
+    const grid2248 = Array.from({ length: 5 }, () => Array(5).fill(2));
+    saveGame('2248', createSnapshot('2248', grid2248, 5, false));
+    expect(loadSavedGame('2048')).toBeNull();
+  });
+
+  it('getResumeTarget returns null when only game-over saves exist', () => {
+    const board = new Board2048();
+    board.start();
+    saveGame('2048', createSnapshot('2048', board.getGrid(), 1, true));
+    expect(getResumeTarget()).toBeNull();
+  });
+
   it('clearSavedGame removes only the requested mode', () => {
     const board2048 = new Board2048();
     board2048.start();

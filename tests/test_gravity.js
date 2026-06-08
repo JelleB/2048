@@ -107,3 +107,21 @@ describe('isGravitySettled', () => {
     ).toBe(true);
   });
 });
+
+describe('applyGravityOneStep return value', () => {
+  it('returns false when no tile can move', () => {
+    const grid = [
+      [0, 0],
+      [2, 4],
+    ];
+    expect(applyGravityOneStep(grid)).toBe(false);
+  });
+
+  it('returns true when a tile moves', () => {
+    const grid = [
+      [2, 0],
+      [0, 0],
+    ];
+    expect(applyGravityOneStep(grid)).toBe(true);
+  });
+});

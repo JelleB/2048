@@ -147,4 +147,115 @@ describe('Board2048', () => {
     ]);
     expect(board.canMove()).toBe(true);
   });
+
+  it('move right merges toward the right edge', () => {
+    board.setGrid([
+      [0, 2, 2, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]);
+    board.move('right');
+    expect(board.cell(0, 3)).toBe(4);
+    expect(board.cell(0, 2)).toBe(0);
+  });
+
+  it('move up merges in a column', () => {
+    board.setGrid([
+      [2, 0, 0, 0],
+      [2, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]);
+    board.move('up');
+    expect(board.cell(0, 0)).toBe(4);
+    expect(board.cell(1, 0)).toBe(0);
+  });
+
+  it('move down slides tiles toward the bottom', () => {
+    board.setGrid([
+      [2, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]);
+    board.move('down');
+    expect(board.cell(3, 0)).toBe(2);
+    expect(board.cell(0, 0)).toBe(0);
+  });
+
+  it('spawnAt returns false on occupied cells', () => {
+    board.setGrid([
+      [2, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]);
+    expect(board.spawnAt(0, 0)).toBe(false);
+  });
+
+  it('spawnAtRandom picks an empty cell', () => {
+    board = new Board2048({ rng: () => 0 });
+    board.setGrid([
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]);
+    expect(board.spawnAtRandom()).toBe(true);
+    expect(board.countTiles()).toBe(1);
+  });
+
+  it('spawnAtRandom returns false when board is full', () => {
+    board.setGrid([
+      [2, 4, 8, 16],
+      [2, 4, 8, 16],
+      [2, 4, 8, 16],
+      [2, 4, 8, 16],
+    ]);
+    expect(board.spawnAtRandom()).toBe(false);
+  });
+
+  it('emptyCells lists every open slot', () => {
+    board.setGrid([
+      [2, 0, 0, 0],
+      [0, 4, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]);
+    expect(board.emptyCells()).toHaveLength(14);
+  });
+
+  it('applyTierNineTwosPurge delegates to applySpawnPoolPurge', () => {
+    board.setGrid([
+      [512, 2, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]);
+    board.applyTierNineTwosPurge();
+    expect(board.cell(0, 1)).toBe(0);
+  });
+
+  it('applySpawnPoolPurge removes unspawnable tiles at tier nine', () => {
+    board.setGrid([
+      [512, 2, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]);
+    board.applySpawnPoolPurge();
+    expect(board.cell(0, 1)).toBe(0);
+    expect(board.score).toBe(2);
+  });
+
+  it('canMove is true when vertical neighbors match', () => {
+    board.setGrid([
+      [2, 4, 8, 16],
+      [2, 4, 8, 16],
+      [2, 4, 8, 16],
+      [2, 4, 8, 16],
+    ]);
+    expect(board.canMove()).toBe(true);
+  });
 });

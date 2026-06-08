@@ -12,6 +12,7 @@ JavaScript browser game: **2048** (swipe merge) and **2248** (path link merge). 
 |---------|---------|
 | `npm install` | Install dependencies |
 | `npm test` | Run Vitest once |
+| `npm run test:coverage` | Vitest with coverage (testable modules ≥95%) |
 | `npm run test:watch` | Vitest watch mode |
 | `npm run dev` | Vite dev server (default http://localhost:5173) |
 | `npm run build` | Production build to `dist/` |

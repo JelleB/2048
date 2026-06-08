@@ -10,7 +10,13 @@ import {
   randomSpawnTileValue,
   roundUpToPowerOfTwo,
   purgeUnspawnableTiles,
+  purgeTwosAtTierNine,
   minSpawnExpForTier,
+  maxTileOnGrid,
+  tileExponent,
+  boardTier,
+  valueFromExponent,
+  fillGridWithStartValues,
 } from '../src/logic/startTiles.js';
 
 describe('spawn pool', () => {
@@ -119,5 +125,67 @@ describe('purgeUnspawnableTiles', () => {
 describe('roundUpToPowerOfTwo', () => {
   it('rounds 12 up to 16', () => {
     expect(roundUpToPowerOfTwo(12)).toBe(16);
+  });
+
+  it('returns zero for non-positive values', () => {
+    expect(roundUpToPowerOfTwo(0)).toBe(0);
+    expect(roundUpToPowerOfTwo(-3)).toBe(0);
+  });
+
+  it('returns exact powers unchanged', () => {
+    expect(roundUpToPowerOfTwo(8)).toBe(8);
+  });
+});
+
+describe('tile helpers', () => {
+  it('maxTileOnGrid finds the highest tile', () => {
+    expect(maxTileOnGrid([[2, 16], [4, 8]])).toBe(16);
+    expect(maxTileOnGrid([[0, 0], [0, 0]])).toBe(0);
+  });
+
+  it('tileExponent and boardTier derive tier from values', () => {
+    expect(tileExponent(16)).toBe(4);
+    expect(boardTier(512)).toBe(9);
+    expect(boardTier(0)).toBe(0);
+  });
+
+  it('valueFromExponent converts exponents to tile values', () => {
+    expect(valueFromExponent(3)).toBe(8);
+  });
+
+  it('minSpawnExpForTier uses default below tier nine', () => {
+    expect(minSpawnExpForTier(4)).toBe(1);
+  });
+
+  it('fillGridWithStartValues fills every cell', () => {
+    const grid = [
+      [0, 0],
+      [0, 0],
+    ];
+    fillGridWithStartValues(grid, () => 0);
+    expect(grid.flat().every((v) => v > 0)).toBe(true);
+  });
+
+  it('randomSpawnTileValue uses current board max', () => {
+    const grid = [
+      [16, 0],
+      [0, 0],
+    ];
+    expect(randomSpawnTileValue(grid, () => 0)).toBe(2);
+  });
+
+  it('spawnWeightsForTierCount handles edge counts', () => {
+    expect(spawnWeightsForTierCount(0)).toEqual([]);
+    expect(spawnWeightsForTierCount(1)).toEqual([1]);
+  });
+
+  it('pickSpawnValue falls back to top tier when rng is 1', () => {
+    expect(pickSpawnValue(16, () => 1)).toBe(16);
+  });
+
+  it('purgeTwosAtTierNine is an alias for purgeUnspawnableTiles', () => {
+    const grid = [[512, 2]];
+    expect(purgeTwosAtTierNine(grid)).toBe(2);
+    expect(grid[0][1]).toBe(0);
   });
 });

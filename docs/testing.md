@@ -8,6 +8,7 @@ See also [AGENTS.md](../AGENTS.md) (commands and conventions) and [architecture.
 
 ```bash
 npm test              # run all tests once
+npm run test:coverage # run tests with coverage report (≥95% on testable code)
 npm run test:watch    # re-run on file changes
 ```
 
@@ -17,18 +18,25 @@ npm run test:watch    # re-run on file changes
 
 ## Where tests live
 
-| Test file | Source module(s) | Tests |
+| Test file | Source module(s) | Focus |
 |-----------|------------------|-------|
-| `tests/test_Board2048.js` | `src/logic/Board2048.js` | 11 |
-| `tests/test_Board2248.js` | `src/logic/Board2248.js` | 22 |
-| `tests/test_pathMerge.js` | `src/logic/pathMerge.js` | 11 |
-| `tests/test_gravity.js` | `src/logic/gravity.js` | 8 |
-| `tests/test_startTiles.js` | `src/logic/startTiles.js` | 13 |
-| `tests/test_gameStorage.js` | `src/persistence/gameStorage.js` | 8 |
+| `tests/test_Board2048.js` | `src/logic/Board2048.js` | Moves, merges, spawn, game over |
+| `tests/test_Board2248.js` | `src/logic/Board2248.js` | Paths, gravity refill, rollback |
+| `tests/test_pathMerge.js` | `src/logic/pathMerge.js` | Path rules and merge scoring |
+| `tests/test_gravity.js` | `src/logic/gravity.js` | Column gravity and one-step preview |
+| `tests/test_startTiles.js` | `src/logic/startTiles.js` | Spawn pools, tiers, purge |
+| `tests/test_gameStorage.js` | `src/persistence/gameStorage.js` | Saves, high scores, resume |
+| `tests/test_cookies.js` | `src/persistence/cookies.js` | Cookie read/write/delete |
+| `tests/test_gamePersistence.js` | `src/scenes/gamePersistence.js` | Init, persist, New/Save helpers |
+| `tests/test_layout.js` | `src/ui/layout.js` | Board layout and hit testing |
 
 **Naming rule:** `tests/test_<ModuleName>.js` mirrors `src/logic/<ModuleName>.js` or `src/persistence/<ModuleName>.js`.
 
-**Not unit-tested (by design):** `src/scenes/*`, `src/ui/*`, `src/main.js` — use `npm run dev` and the manual QA checklist in [AGENTS.md](../AGENTS.md).
+**Not unit-tested (by design):** Phaser scenes (`BootScene`, `MenuScene`, `Game2048Scene`, `Game2248Scene`), `src/ui/buttons.js`, `src/main.js` — use `npm run dev` and the manual QA checklist in [AGENTS.md](../AGENTS.md).
+
+### Coverage target
+
+`npm run test:coverage` measures **testable modules** only (`src/logic/`, `src/persistence/`, `src/scenes/gamePersistence.js`, `src/ui/layout.js`). Thresholds in `vitest.config.js`: **≥95%** lines/statements/functions, **≥90%** branches. Phaser scene files are excluded from the report.
 
 ## How to add a new test (TDD)
 
