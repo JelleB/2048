@@ -12,7 +12,7 @@ export class BootScene extends Phaser.Scene {
   create() {
     const resume = getResumeTarget();
     if (resume) {
-      this.scene.start(resume.sceneKey, resume.state);
+      this.scene.start(resume.sceneKey);
       return;
     }
     this.scene.start('Menu');

@@ -3,7 +3,7 @@
  */
 import Phaser from 'phaser';
 import { makeButton } from '../ui/buttons.js';
-import { getHighScore, loadSavedGame } from '../persistence/gameStorage.js';
+import { getHighScore } from '../persistence/gameStorage.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -33,12 +33,10 @@ export class MenuScene extends Phaser.Scene {
     const fontSize = Math.max(18, Math.floor(btnH * 0.38));
 
     makeButton(this, width / 2, height * 0.45, btnW, btnH, fontSize, 'Play 2048', () => {
-      const saved = loadSavedGame('2048');
-      this.scene.start('Game2048', saved && !saved.gameOver ? saved : undefined);
+      this.scene.start('Game2048');
     });
     makeButton(this, width / 2, height * 0.58, btnW, btnH, fontSize, 'Play 2248', () => {
-      const saved = loadSavedGame('2248');
-      this.scene.start('Game2248', saved && !saved.gameOver ? saved : undefined);
+      this.scene.start('Game2248');
     });
 
     const hintSize = Math.max(12, width * 0.03);

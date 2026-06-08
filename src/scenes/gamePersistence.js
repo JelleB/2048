@@ -15,14 +15,15 @@ import { makeButton } from '../ui/buttons.js';
 /** @typedef {'2048' | '2248'} GameMode */
 
 /**
- * Restores board state from scene launch data or cookie save.
+ * Restores board state from the cookie save for this mode.
+ * Always reads cookies directly — Phaser scene.start data is not reliable
+ * (create() may receive an empty object instead of undefined).
  * @param {GameMode} mode
  * @param {{ start: () => void, setGrid: (grid: number[][]) => void, score: number }} board
- * @param {import('../persistence/gameStorage.js').SavedGameState | undefined} launchData
  * @returns {boolean} gameOver flag after restore.
  */
-export function initBoardFromStorage(mode, board, launchData) {
-  const saved = launchData ?? loadSavedGame(mode);
+export function initBoardFromStorage(mode, board) {
+  const saved = loadSavedGame(mode);
   if (saved && !saved.gameOver) {
     applySnapshot(board, saved);
     return false;

@@ -22,13 +22,10 @@ export class Game2048Scene extends Phaser.Scene {
     super({ key: 'Game2048' });
   }
 
-  /**
-   * @param {import('../persistence/gameStorage.js').SavedGameState} [data]
-   */
-  create(data) {
+  create() {
     /** @type {Board2048} */
     this.board = new Board2048();
-    this.gameOver = initBoardFromStorage('2048', this.board, data);
+    this.gameOver = initBoardFromStorage('2048', this.board);
     /** @type {Phaser.GameObjects.Rectangle[][]} */
     this.tileRects = [];
     /** @type {Phaser.GameObjects.Text[][]} */

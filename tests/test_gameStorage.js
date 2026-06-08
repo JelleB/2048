@@ -119,6 +119,16 @@ describe('gameStorage', () => {
     expect(board.cell(0, 0)).toBe(64);
   });
 
+  it('ignores snapshots with a missing grid', () => {
+    const board = new Board2248();
+    board.start();
+    const before = board.getGrid();
+
+    applySnapshot(board, { mode: '2248', score: 50, gameOver: false });
+    expect(board.getGrid()).toEqual(before);
+    expect(board.score).toBe(0);
+  });
+
   it('clearSavedGame removes only the requested mode', () => {
     const board2048 = new Board2048();
     board2048.start();

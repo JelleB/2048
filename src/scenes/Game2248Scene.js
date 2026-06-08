@@ -29,13 +29,10 @@ export class Game2248Scene extends Phaser.Scene {
     super({ key: 'Game2248' });
   }
 
-  /**
-   * @param {import('../persistence/gameStorage.js').SavedGameState} [data]
-   */
-  create(data) {
+  create() {
     /** @type {Board2248} */
     this.board = new Board2248();
-    this.gameOver = initBoardFromStorage('2248', this.board, data);
+    this.gameOver = initBoardFromStorage('2248', this.board);
     this.animating = false;
     /** @type {{ row: number, col: number }[]} */
     this.path = [];

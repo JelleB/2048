@@ -171,8 +171,9 @@ export function clearSavedGame(mode) {
  * @param {SavedGameState} state
  */
 export function applySnapshot(board, state) {
+  if (!state?.grid) return;
   board.setGrid(state.grid);
-  board.score = state.score;
+  board.score = state.score ?? 0;
 }
 
 /**
