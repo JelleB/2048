@@ -2,6 +2,8 @@
  * Main menu: pick 2048 or 2248 mode. Buttons scale with viewport.
  */
 import Phaser from 'phaser';
+import { makeButton } from '../ui/buttons.js';
+import { getHighScore, loadSavedGame } from '../persistence/gameStorage.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -30,12 +32,28 @@ export class MenuScene extends Phaser.Scene {
     const btnH = Math.max(48, height * 0.08);
     const fontSize = Math.max(18, Math.floor(btnH * 0.38));
 
-    this.makeButton(width / 2, height * 0.45, btnW, btnH, fontSize, 'Play 2048', () => {
-      this.scene.start('Game2048');
+    makeButton(this, width / 2, height * 0.45, btnW, btnH, fontSize, 'Play 2048', () => {
+      const saved = loadSavedGame('2048');
+      this.scene.start('Game2048', saved && !saved.gameOver ? saved : undefined);
     });
-    this.makeButton(width / 2, height * 0.58, btnW, btnH, fontSize, 'Play 2248', () => {
-      this.scene.start('Game2248');
+    makeButton(this, width / 2, height * 0.58, btnW, btnH, fontSize, 'Play 2248', () => {
+      const saved = loadSavedGame('2248');
+      this.scene.start('Game2248', saved && !saved.gameOver ? saved : undefined);
     });
+
+    const hintSize = Math.max(12, width * 0.03);
+    this.add
+      .text(
+        width / 2,
+        height * 0.72,
+        `Best 2048: ${getHighScore('2048')} · Best 2248: ${getHighScore('2248')}`,
+        {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: `${hintSize}px`,
+          color: '#a8a8c0',
+        },
+      )
+      .setOrigin(0.5);
 
     this.add
       .text(width / 2, height * 0.88, 'Swipe (2048) · Drag path (2248)', {
@@ -44,32 +62,6 @@ export class MenuScene extends Phaser.Scene {
         color: '#a8a8c0',
       })
       .setOrigin(0.5);
-  }
-
-  /**
-   * @param {number} x
-   * @param {number} y
-   * @param {number} w
-   * @param {number} h
-   * @param {number} fontSize
-   * @param {string} label
-   * @param {() => void} onClick
-   */
-  makeButton(x, y, w, h, fontSize, label, onClick) {
-    const bg = this.add
-      .rectangle(x, y, w, h, 0x8f7a66, 12)
-      .setInteractive({ useHandCursor: true });
-    const text = this.add
-      .text(x, y, label, {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: `${fontSize}px`,
-        color: '#f9f6f2',
-      })
-      .setOrigin(0.5);
-    bg.on('pointerup', onClick);
-    bg.on('pointerover', () => bg.setFillStyle(0x9f8b77));
-    bg.on('pointerout', () => bg.setFillStyle(0x8f7a66));
-    return { bg, text };
   }
 
   shutdown() {

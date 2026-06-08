@@ -16,17 +16,26 @@ import {
   tileColor,
   tileTextColor,
 } from '../ui/layout.js';
+import {
+  addGameControlButtons,
+  formatScoreLine,
+  initBoardFromStorage,
+  persistGameState,
+  startNewGame,
+} from './gamePersistence.js';
 
 export class Game2248Scene extends Phaser.Scene {
   constructor() {
     super({ key: 'Game2248' });
   }
 
-  create() {
+  /**
+   * @param {import('../persistence/gameStorage.js').SavedGameState} [data]
+   */
+  create(data) {
     /** @type {Board2248} */
     this.board = new Board2248();
-    this.board.start();
-    this.gameOver = false;
+    this.gameOver = initBoardFromStorage('2248', this.board, data);
     this.animating = false;
     /** @type {{ row: number, col: number }[]} */
     this.path = [];
@@ -57,11 +66,22 @@ export class Game2248Scene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.scoreText = this.add.text(width / 2, height * 0.12, 'Score: 0', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: `${Math.max(16, width * 0.04)}px`,
-      color: '#edc22e',
-    }).setOrigin(0.5);
+    this.scoreText = this.add.text(
+      width / 2,
+      height * 0.12,
+      formatScoreLine('2248', this.board.score),
+      {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: `${Math.max(16, width * 0.04)}px`,
+        color: '#edc22e',
+      },
+    ).setOrigin(0.5);
+
+    addGameControlButtons(this, width, height, {
+      disabled: this.animating,
+      onNew: () => this.handleNewGame(),
+      onSave: () => this.handleSaveGame(),
+    });
 
     const back = this.add
       .text(width * 0.08, height * 0.06, '← Menu', {
@@ -74,7 +94,7 @@ export class Game2248Scene extends Phaser.Scene {
       if (!this.animating) this.scene.start('Menu');
     });
 
-    this.layout = computeBoardLayout(width, height, this.board.size);
+    this.layout = computeBoardLayout(width, height, this.board.size, 0.28);
     const { offsetX, offsetY, cellSize, gap, boardSize } = this.layout;
     this.add.rectangle(
       offsetX + boardSize / 2,
@@ -125,8 +145,26 @@ export class Game2248Scene extends Phaser.Scene {
         this.tileTexts[r][c].setColor(tileTextColor(v));
       }
     }
-    this.scoreText.setText(`Score: ${this.board.score}`);
+    this.scoreText.setText(formatScoreLine('2248', this.board.score));
     this.drawPathHighlight();
+  }
+
+  handleNewGame() {
+    if (this.gameOver || this.animating) return;
+    this.gameOver = startNewGame('2248', this.board);
+    this.buildUi();
+  }
+
+  handleSaveGame() {
+    if (this.gameOver || this.animating) return;
+    persistGameState('2248', this.board.getGrid(), this.board.score, false);
+    this.scoreText.setText(formatScoreLine('2248', this.board.score));
+  }
+
+  /** Auto-saves after each merge and updates the high score cookie. */
+  autoPersist() {
+    persistGameState('2248', this.board.getGrid(), this.board.score, this.gameOver);
+    this.scoreText.setText(formatScoreLine('2248', this.board.score));
   }
 
   /**
@@ -189,6 +227,7 @@ export class Game2248Scene extends Phaser.Scene {
         this.gameOver = true;
         this.showGameOver();
       }
+      this.autoPersist();
     } finally {
       this.animating = false;
     }
