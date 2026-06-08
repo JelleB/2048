@@ -134,7 +134,7 @@ npm run build   → dist/ (BASE_PATH=/stunning-tribble/ in CI)
 npm test        → Vitest
 ```
 
-GitHub Actions (`.github/workflows/deploy-pages.yml`): `npm ci` → production build (`--base /stunning-tribble/`) → `actions/deploy-pages`. The workflow also copies `dist/index.html`, `dist/assets/`, and `.nojekyll` to the **repository root on `main`**, because GitHub’s `pages-build-deployment` serves branch root files at `/stunning-tribble/`. Develop on **`dev`** (source `index.html` with `/src/main.js`); **`main`** root `index.html` is the production bundle (updated by CI).
+GitHub Actions (`.github/workflows/deploy-pages.yml`): `npm ci` → production build (`--base /stunning-tribble/`) → `actions/deploy-pages`. The workflow also copies `dist/index.html`, `dist/assets/`, and `.nojekyll` to the **repository root on `main`**, because GitHub’s `pages-build-deployment` serves branch root files at `/stunning-tribble/`. Develop on **`dev`** using `index.source.html` (`npm run dev`); **`main`** root `index.html` is the production bundle (updated by CI). Do not run `npm run build` on `main` without `index.source.html`.
 
 ## Extension points
 
