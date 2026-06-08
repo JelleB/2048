@@ -335,6 +335,38 @@ describe('Board2248', () => {
     expect(board.countTiles()).toBe(1);
   });
 
+  it('rejects reusing a tile already in the chain', () => {
+    board.setGrid([
+      [2, 2, 0, 0, 0],
+      [2, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ]);
+    const partial = [
+      { row: 0, col: 0 },
+      { row: 0, col: 1 },
+      { row: 1, col: 0 },
+    ];
+    expect(board.canExtendPath(partial, { row: 0, col: 0 })).toBe(false);
+    expect(
+      board.isValidPath([
+        { row: 0, col: 0 },
+        { row: 0, col: 1 },
+        { row: 1, col: 0 },
+        { row: 0, col: 0 },
+      ]),
+    ).toBe(false);
+    expect(
+      board.applyPath([
+        { row: 0, col: 0 },
+        { row: 0, col: 1 },
+        { row: 1, col: 0 },
+        { row: 0, col: 0 },
+      ]),
+    ).toBe(false);
+  });
+
   it('canExtendPath rejects empty cells and invalid ladders', () => {
     board.setGrid([
       [4, 8, 0, 0, 0],

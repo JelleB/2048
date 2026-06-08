@@ -211,13 +211,24 @@ export class Board2248 {
   }
 
   /**
+   * @param {Cell[]} path
+   * @param {Cell} cell
+   * @returns {boolean}
+   */
+  pathContainsCell(path, cell) {
+    return path.some((p) => p.row === cell.row && p.col === cell.col);
+  }
+
+  /**
    * Whether adding a cell keeps a valid partial chain (for drag).
+   * Each tile may appear at most once; rollback is handled separately in the scene.
    * @param {Cell[]} path
    * @param {Cell} next
    * @returns {boolean}
    */
   canExtendPath(path, next) {
     if (this.grid[next.row][next.col] === 0) return false;
+    if (this.pathContainsCell(path, next)) return false;
     const values = [...this.pathValues(path), this.grid[next.row][next.col]];
     return isValidPartialMergePath(values);
   }
@@ -229,12 +240,17 @@ export class Board2248 {
   isValidPath(path) {
     if (path.length < 2) return false;
 
+    /** @type {Set<string>} */
+    const visited = new Set();
     for (let i = 0; i < path.length; i += 1) {
       const { row, col } = path[i];
       if (row < 0 || col < 0 || row >= this.size || col >= this.size) {
         return false;
       }
       if (this.grid[row][col] === 0) return false;
+      const key = `${row},${col}`;
+      if (visited.has(key)) return false;
+      visited.add(key);
       if (i > 0 && !this.areAdjacent(path[i - 1], path[i])) return false;
     }
 
