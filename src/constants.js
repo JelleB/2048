@@ -43,3 +43,21 @@ export const GRAVITY_STEP_MS = 90;
 
 /** Pause between each new spawn before it falls (2248). */
 export const SPAWN_PAUSE_MS = 120;
+
+/** LEDs per row in Knoppenspel. */
+export const KNOPPEN_BIT_COUNT = 8;
+
+/** Candidate rows on the right pane in Knoppenspel. */
+export const KNOPPEN_ROW_COUNT = 8;
+
+/** First-round timer duration (ms). */
+export const KNOPPEN_INITIAL_TIMER_MS = 3000;
+
+/** Minimum round timer at the difficulty floor (ms). */
+export const KNOPPEN_MIN_TIMER_MS = 1000;
+
+/** Round index at which the timer reaches the minimum (turn 100 → 1s left). */
+export const KNOPPEN_TIMER_FLOOR_ROUND = 100;
+
+/** Pause before auto-continue to the next round after a correct reveal (ms). */
+export const KNOPPEN_REVEAL_PAUSE_MS = 5000;

@@ -6,6 +6,7 @@ import { BootScene } from './scenes/BootScene.js';
 import { MenuScene } from './scenes/MenuScene.js';
 import { Game2048Scene } from './scenes/Game2048Scene.js';
 import { Game2248Scene } from './scenes/Game2248Scene.js';
+import { GameKnoppenspelScene } from './scenes/GameKnoppenspelScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -25,7 +26,7 @@ const config = {
       height: 1600,
     },
   },
-  scene: [BootScene, MenuScene, Game2048Scene, Game2248Scene],
+  scene: [BootScene, MenuScene, Game2048Scene, Game2248Scene, GameKnoppenspelScene],
   input: {
     activePointers: 2,
   },

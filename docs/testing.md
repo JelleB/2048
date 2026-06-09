@@ -25,6 +25,8 @@ npm run test:watch    # re-run on file changes
 | `tests/test_pathMerge.js` | `src/logic/pathMerge.js` | Path rules and merge scoring |
 | `tests/test_gravity.js` | `src/logic/gravity.js` | Column gravity and one-step preview |
 | `tests/test_startTiles.js` | `src/logic/startTiles.js` | Spawn pools, tiers, purge |
+| `tests/test_knoppenspel.js` | `src/logic/knoppenspel.js` | Round gen, scoring, timer curve |
+| `tests/test_binaryDisplay.js` | `src/logic/binaryDisplay.js` | Byte ↔ LED bits, reveal labels |
 | `tests/test_gameStorage.js` | `src/persistence/gameStorage.js` | Saves, high scores, resume |
 | `tests/test_cookies.js` | `src/persistence/cookies.js` | Cookie read/write/delete |
 | `tests/test_gamePersistence.js` | `src/scenes/gamePersistence.js` | Init, persist, New/Save helpers |
@@ -32,7 +34,7 @@ npm run test:watch    # re-run on file changes
 
 **Naming rule:** `tests/test_<ModuleName>.js` mirrors `src/logic/<ModuleName>.js` or `src/persistence/<ModuleName>.js`.
 
-**Not unit-tested (by design):** Phaser scenes (`BootScene`, `MenuScene`, `Game2048Scene`, `Game2248Scene`), `src/ui/buttons.js`, `src/main.js` — use `npm run dev` and the manual QA checklist in [AGENTS.md](../AGENTS.md).
+**Not unit-tested (by design):** Phaser scenes (`BootScene`, `MenuScene`, `Game2048Scene`, `Game2248Scene`, `GameKnoppenspelScene`), `src/ui/buttons.js`, `src/main.js` — use `npm run dev` and the manual QA checklist in [AGENTS.md](../AGENTS.md).
 
 ### Coverage target
 

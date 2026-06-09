@@ -17,7 +17,7 @@ Board rules, scoring, spawn pools, path validation, and gravity run in `src/logi
                             │
 ┌───────────────────────────▼─────────────────────────────┐
 │  Scenes (src/scenes/) — input, layout, tweens, overlays   │
-│  Boot → Menu → Game2048 | Game2248                        │
+│  Boot → Menu → Game2048 | Game2248 | GameKnoppenspel      │
 └───────────────────────────┬─────────────────────────────┘
                             │ calls
 ┌───────────────────────────▼─────────────────────────────┐
@@ -48,7 +48,8 @@ BootScene
   ├─ cookie has unfinished game? → Game2048 or Game2248
   └─ else → MenuScene
         ├─ Play 2048 → Game2048Scene
-        └─ Play 2248 → Game2248Scene
+        ├─ Play 2248 → Game2248Scene
+        └─ Play Knoppenspel → GameKnoppenspelScene
 ```
 
 | Scene | Responsibility |
@@ -57,6 +58,7 @@ BootScene
 | `MenuScene` | Mode picker; shows per-mode high scores |
 | `Game2048Scene` | Arrow keys + swipe; syncs tiles after `board.move()` |
 | `Game2248Scene` | Drag path; animated gravity/refill after merge |
+| `GameKnoppenspelScene` | 8-bit LED match; shrinking timer; reveal overlay on correct/wrong |
 
 Scenes rebuild UI on resize (`buildUi()`). Game scenes use `computeBoardLayout()` from `src/ui/layout.js` for cell size and board offset.
 
@@ -86,6 +88,8 @@ Scenes rebuild UI on resize (`buildUi()`). Game scenes use `computeBoardLayout()
 | `pathMerge.js` | Path validation (partial + complete), merge score |
 | `gravity.js` | Column settle, one-step preview for tweens |
 | `constants.js` | Grid sizes, swipe threshold, animation timings, spawn tier constants |
+| `knoppenspel.js` | 8-bit round generation, scoring phases, shrinking timer |
+| `binaryDisplay.js` | Byte ↔ MSB-left LED bits, reveal label formatting |
 
 ## UI layer
 
@@ -102,7 +106,7 @@ Cookie-backed client storage (`src/persistence/`). No server.
 
 | Cookie key | Content |
 |------------|---------|
-| `game2048_highscore` / `game2248_highscore` | Best score per mode |
+| `game2048_highscore` / `game2248_highscore` / `game_knoppenspel_highscore` | Best score per mode |
 | `game2048_save` / `game2248_save` | JSON snapshot: `version`, `mode`, `grid`, `score`, `gameOver` |
 | `last_active_mode` | Which mode to prefer on resume |
 

@@ -5,11 +5,19 @@
 import { deleteCookie, getCookie, setCookie } from './cookies.js';
 import { GRID_2048, GRID_2248 } from '../constants.js';
 
-/** @typedef {'2048' | '2248'} GameMode */
+/** @typedef {'2048' | '2248' | 'knoppenspel'} GameMode */
 
 export const STORAGE_VERSION = 1;
 
-/** @type {Record<GameMode, { gridSize: number, sceneKey: string, highScoreKey: string, saveKey: string }>} */
+/**
+ * @typedef {object} ModeConfig
+ * @property {number} [gridSize] Grid dimension for puzzle modes.
+ * @property {string} sceneKey Phaser scene key.
+ * @property {string} highScoreKey Cookie key for best score.
+ * @property {string} [saveKey] Cookie key for in-progress save (arcade modes omit).
+ */
+
+/** @type {Record<GameMode, ModeConfig>} */
 export const MODE_CONFIG = {
   '2048': {
     gridSize: GRID_2048,
@@ -22,6 +30,10 @@ export const MODE_CONFIG = {
     sceneKey: 'Game2248',
     highScoreKey: 'game2248_highscore',
     saveKey: 'game2248_save',
+  },
+  knoppenspel: {
+    sceneKey: 'GameKnoppenspel',
+    highScoreKey: 'game_knoppenspel_highscore',
   },
 };
 
@@ -137,7 +149,9 @@ export function updateHighScore(mode, score) {
  * @returns {SavedGameState | null}
  */
 export function loadSavedGame(mode) {
-  const raw = storageAdapter.get(MODE_CONFIG[mode].saveKey);
+  const { saveKey } = MODE_CONFIG[mode];
+  if (!saveKey) return null;
+  const raw = storageAdapter.get(saveKey);
   const parsed = parseSavedGame(raw);
   if (!parsed || parsed.mode !== mode) return null;
   return parsed;
@@ -149,12 +163,14 @@ export function loadSavedGame(mode) {
  * @param {SavedGameState} state
  */
 export function saveGame(mode, state) {
+  const { saveKey } = MODE_CONFIG[mode];
+  if (!saveKey) return;
   storageAdapter.set(LAST_ACTIVE_MODE_KEY, mode);
   if (state.gameOver) {
-    storageAdapter.remove(MODE_CONFIG[mode].saveKey);
+    storageAdapter.remove(saveKey);
     return;
   }
-  storageAdapter.set(MODE_CONFIG[mode].saveKey, JSON.stringify(state));
+  storageAdapter.set(saveKey, JSON.stringify(state));
 }
 
 /**
@@ -162,7 +178,9 @@ export function saveGame(mode, state) {
  * @param {GameMode} mode
  */
 export function clearSavedGame(mode) {
-  storageAdapter.remove(MODE_CONFIG[mode].saveKey);
+  const { saveKey } = MODE_CONFIG[mode];
+  if (!saveKey) return;
+  storageAdapter.remove(saveKey);
 }
 
 /**

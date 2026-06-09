@@ -14,6 +14,8 @@ export default defineConfig({
         'src/persistence/**/*.js',
         'src/scenes/gamePersistence.js',
         'src/ui/layout.js',
+        'src/logic/knoppenspel.js',
+        'src/logic/binaryDisplay.js',
       ],
       thresholds: {
         lines: 95,
