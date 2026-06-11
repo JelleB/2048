@@ -56,6 +56,14 @@ describe('gameStorage', () => {
     expect(getHighScore('2048')).toBe(200);
   });
 
+  it('tracks knoppenspel high score without a save slot', () => {
+    updateHighScore('knoppenspel', 7);
+    expect(getHighScore('knoppenspel')).toBe(7);
+    expect(loadSavedGame('knoppenspel')).toBeNull();
+    clearSavedGame('knoppenspel');
+    expect(getHighScore('knoppenspel')).toBe(7);
+  });
+
   it('saves and loads an unfinished 2048 game', () => {
     const grid = [
       [2, 4, 0, 0],
