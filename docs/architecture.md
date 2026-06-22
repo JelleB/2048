@@ -17,7 +17,8 @@ Board rules, scoring, spawn pools, path validation, and gravity run in `src/logi
                             │
 ┌───────────────────────────▼─────────────────────────────┐
 │  Scenes (src/scenes/) — input, layout, tweens, overlays   │
-│  Boot → Menu → Game2048 | Game2248 | GameKnoppenspel      │
+│  Boot → Menu → Game2048 | Game2248 | GameKnoppenspel | GameToneGrid │
+│              └─ Play BSharp → bsharp.html (vendor subtree, no Phaser) │
 └───────────────────────────┬─────────────────────────────┘
                             │ calls
 ┌───────────────────────────▼─────────────────────────────┐
@@ -36,6 +37,7 @@ Board rules, scoring, spawn pools, path validation, and gravity run in `src/logi
 |-------|------------|------|
 | Bundler | Vite 5 | Dev server, ESM, production build to `dist/` |
 | Game engine | Phaser 3.80+ | Scenes, input, tweens, responsive `Scale.FIT` |
+| Audio (ToneGrid) | Tone.js 15+ | Scheduled steps, synth; separate from Vitest |
 | Tests | Vitest | Unit tests for logic and persistence |
 | Hosting | GitHub Pages | CI builds `dist/` on push to `main` |
 
@@ -50,6 +52,8 @@ BootScene
         ├─ Play 2048 → Game2048Scene
         ├─ Play 2248 → Game2248Scene
         └─ Play Knoppenspel → GameKnoppenspelScene
+        ├─ Play ToneGrid → GameToneGridScene
+        └─ Play BSharp → `bsharp.html` (standalone page, `vendor/bsharp/` subtree)
 ```
 
 | Scene | Responsibility |
@@ -59,6 +63,7 @@ BootScene
 | `Game2048Scene` | Arrow keys + swipe; syncs tiles after `board.move()` |
 | `Game2248Scene` | Drag path; animated gravity/refill after merge |
 | `GameKnoppenspelScene` | 8-bit LED match; shrinking timer; reveal overlay on correct/wrong |
+| `GameToneGridScene` | 16×16 step grid; six section tabs; song chain; scale picker; micro-timing nudge; Tone.js playback |
 
 Scenes rebuild UI on resize (`buildUi()`). Game scenes use `computeBoardLayout()` from `src/ui/layout.js` for cell size and board offset.
 
@@ -90,6 +95,7 @@ Scenes rebuild UI on resize (`buildUi()`). Game scenes use `computeBoardLayout()
 | `constants.js` | Grid sizes, swipe threshold, animation timings, spawn tier constants |
 | `knoppenspel.js` | 8-bit round generation, scoring phases, shrinking timer |
 | `binaryDisplay.js` | Byte ↔ MSB-left LED bits, reveal label formatting |
+| `toneGrid.js` | Multi-section 16×16 patterns, pentatonic pitch maps (C/D/E/F/G/A), micro-timing offsets, song chain advance |
 
 ## UI layer
 
@@ -108,7 +114,10 @@ Cookie-backed client storage (`src/persistence/`). No server.
 |------------|---------|
 | `game2048_highscore` / `game2248_highscore` / `game_knoppenspel_highscore` | Best score per mode |
 | `game2048_save` / `game2248_save` | JSON snapshot: `version`, `mode`, `grid`, `score`, `gameOver` |
+| `tonegrid_pattern` | JSON v2: `sections` (matrix + offsets per tab), `scaleRoot`, `songChain`, `loopSong`, `bpm`; v1 migrates into Verse |
 | `last_active_mode` | Which mode to prefer on resume |
+
+ToneGrid saves on cell edit, clear, BPM change, and scene shutdown (`toneGridStorage.js`). It does not use `getResumeTarget()`.
 
 **Lifecycle**
 

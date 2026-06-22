@@ -4,7 +4,7 @@ Guide for humans and coding agents working in this repo.
 
 ## Project summary
 
-JavaScript browser game: **2048** (swipe merge) and **2248** (path link merge). Phaser 3 renders and handles input; **game rules live in `src/logic/`** and are covered by Vitest.
+JavaScript browser games: **2048**, **2248**, **Knoppenspel**, **ToneGrid** (step sequencer), and **BSharp** (perfect-pitch trainer). Phaser 3 renders and handles input for the tile games; **game rules live in `src/logic/`** and are covered by Vitest. ToneGrid audio uses **Tone.js** in `src/audio/`. BSharp is vendored at `vendor/bsharp/` (git subtree) and runs as a standalone HTML page.
 
 ## Commands
 
@@ -40,9 +40,16 @@ Test naming: `test_Board2048.js`, `test_Board2248.js` mirror `src/logic/Board204
 |------|------|
 | `src/logic/Board2048.js` | 2048 grid, moves, score |
 | `src/logic/Board2248.js` | 2248 paths, merges |
-| `src/constants.js` | `GRID_2048`, `GRID_2248`, spawn rates |
+| `src/logic/toneGrid.js` | ToneGrid v2: sections, scales, offsets, song chain |
+| `src/audio/toneGridEngine.js` | Tone.js sequencer transport (not unit-tested) |
+| `src/constants.js` | Grid sizes, spawn rates, ToneGrid BPM |
+| `src/persistence/toneGridStorage.js` | ToneGrid pattern cookie |
 | `src/scenes/*.js` | Phaser UI only |
 | `src/main.js` | Phaser game config, responsive scale |
+| `src/navigation.js` | Menu ↔ standalone pages (BSharp) |
+| `src/bsharp/entry.ts` | Vite entry: loads vendor BSharp TS + SCSS |
+| `vendor/bsharp/` | BSharp subtree ([paytonjjones/bsharp](https://github.com/paytonjjones/bsharp), Apache-2.0) |
+| `bsharp.source.html` | BSharp HTML shell (Vite entry) |
 | `tests/` | Vitest unit tests |
 
 ## Adding a feature
@@ -60,13 +67,25 @@ Test naming: `test_Board2048.js`, `test_Board2248.js` mirror `src/logic/Board204
 - [ ] 2248 drag uses cell hit areas sized from layout
 - [ ] Menu buttons scale with game width
 
+- [ ] ToneGrid drag paints cells; playhead syncs with audio on narrow viewport
+
 ## Manual QA (before “done”)
 
 1. Menu → 2048: arrow keys and swipe move tiles; merges and score update.
 2. Fill board with no moves → game over UI.
 3. Menu → 2248: drag path on matching numbers; release merges at end.
-4. Chrome DevTools device mode ~375×667: board visible, controls usable.
-5. `npm test` all green.
+4. Menu → ToneGrid: section tabs, song chain (↻ loop, + append), scale C–A, tap/drag paint, horizontal nudge on active cells, Play/Pause, BPM ±, Clear (current section); all sections + chain persist after leave/re-enter.
+5. Menu → BSharp: chord trainer opens; home icon returns to games menu; profiles persist in browser storage.
+6. Chrome DevTools device mode ~375×667: board visible, controls usable.
+7. `npm test` all green.
+
+### BSharp subtree updates
+
+```bash
+git subtree pull --prefix=vendor/bsharp https://github.com/paytonjjones/bsharp.git master --squash
+```
+
+After pulling, run `npm run build` and spot-check `bsharp.html` (audio, styles, home link).
 
 ## Conventions
 

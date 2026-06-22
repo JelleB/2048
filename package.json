@@ -5,18 +5,21 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --base /stunning-tribble/",
+    "build": "vite build --base /2048/",
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "phaser": "^3.80.1"
+    "phaser": "^3.80.1",
+    "tone": "^15.1.22"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^2.1.6",
+    "sass": "^1.80.0",
     "vite": "^5.4.11",
+    "vite-plugin-static-copy": "^2.3.0",
     "vitest": "^2.1.6"
   }
 }

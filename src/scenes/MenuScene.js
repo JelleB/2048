@@ -1,9 +1,10 @@
 /**
- * Main menu: pick 2048, 2248, or Knoppenspel. Buttons scale with viewport.
+ * Main menu: pick 2048, 2248, Knoppenspel, ToneGrid, or BSharp. Buttons scale with viewport.
  */
 import Phaser from 'phaser';
 import { makeButton } from '../ui/buttons.js';
 import { getHighScore } from '../persistence/gameStorage.js';
+import { navigateToBSharp } from '../navigation.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -21,7 +22,7 @@ export class MenuScene extends Phaser.Scene {
 
     const titleSize = Math.max(28, Math.floor(width * 0.08));
     this.add
-      .text(width / 2, height * 0.18, 'Puzzle Games', {
+      .text(width / 2, height * 0.16, 'Games', {
         fontFamily: 'Arial, sans-serif',
         fontSize: `${titleSize}px`,
         color: '#f9f6f2',
@@ -32,21 +33,27 @@ export class MenuScene extends Phaser.Scene {
     const btnH = Math.max(44, height * 0.07);
     const fontSize = Math.max(18, Math.floor(btnH * 0.38));
 
-    makeButton(this, width / 2, height * 0.38, btnW, btnH, fontSize, 'Play 2048', () => {
+    makeButton(this, width / 2, height * 0.32, btnW, btnH, fontSize, 'Play 2048', () => {
       this.scene.start('Game2048');
     });
-    makeButton(this, width / 2, height * 0.5, btnW, btnH, fontSize, 'Play 2248', () => {
+    makeButton(this, width / 2, height * 0.40, btnW, btnH, fontSize, 'Play 2248', () => {
       this.scene.start('Game2248');
     });
-    makeButton(this, width / 2, height * 0.62, btnW, btnH, fontSize, 'Play Knoppenspel', () => {
+    makeButton(this, width / 2, height * 0.48, btnW, btnH, fontSize, 'Play Knoppenspel', () => {
       this.scene.start('GameKnoppenspel');
+    });
+    makeButton(this, width / 2, height * 0.56, btnW, btnH, fontSize, 'Play ToneGrid', () => {
+      this.scene.start('GameToneGrid');
+    });
+    makeButton(this, width / 2, height * 0.64, btnW, btnH, fontSize, 'Play BSharp', () => {
+      navigateToBSharp();
     });
 
     const hintSize = Math.max(11, width * 0.028);
     this.add
       .text(
         width / 2,
-        height * 0.74,
+        height * 0.78,
         `Best 2048: ${getHighScore('2048')} · Best 2248: ${getHighScore('2248')} · Best Knoppenspel: ${getHighScore('knoppenspel')}`,
         {
           fontFamily: 'Arial, sans-serif',
@@ -59,7 +66,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height * 0.88, 'Swipe (2048) · Drag path (2248) · Match LEDs (Knoppenspel)', {
+      .text(width / 2, height * 0.90, 'Swipe (2048) · Drag (2248) · LEDs (Knoppenspel) · Grid (ToneGrid) · Chords (BSharp)', {
         fontFamily: 'Arial, sans-serif',
         fontSize: `${Math.max(11, width * 0.03)}px`,
         color: '#a8a8c0',
