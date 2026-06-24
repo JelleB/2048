@@ -17,7 +17,8 @@ Board rules, scoring, spawn pools, path validation, and gravity run in `src/logi
                             │
 ┌───────────────────────────▼─────────────────────────────┐
 │  Scenes (src/scenes/) — input, layout, tweens, overlays   │
-│  Boot → Menu → Game2048 | Game2248 | GameKnoppenspel      │
+│  Boot → Menu → Game2048 | Game2248 | GameKnoppenspel | GameToneGrid │
+│              └─ Play BSharp → bsharp.html (vendor subtree, no Phaser) │
 └───────────────────────────┬─────────────────────────────┘
                             │ calls
 ┌───────────────────────────▼─────────────────────────────┐
@@ -36,10 +37,11 @@ Board rules, scoring, spawn pools, path validation, and gravity run in `src/logi
 |-------|------------|------|
 | Bundler | Vite 5 | Dev server, ESM, production build to `dist/` |
 | Game engine | Phaser 3.80+ | Scenes, input, tweens, responsive `Scale.FIT` |
+| Audio (ToneGrid) | Tone.js 15+ | Scheduled steps, synth; separate from Vitest |
 | Tests | Vitest | Unit tests for logic and persistence |
 | Hosting | GitHub Pages | CI builds `dist/` on push to `main` |
 
-Base path for Pages: `/stunning-tribble/` (set via `BASE_PATH` in `.github/workflows/deploy-pages.yml`).
+Base path for Pages: `/2048/` (set via `BASE_PATH` in `.github/workflows/deploy-pages.yml`).
 
 ## Scene flow
 
@@ -50,6 +52,8 @@ BootScene
         ├─ Play 2048 → Game2048Scene
         ├─ Play 2248 → Game2248Scene
         └─ Play Knoppenspel → GameKnoppenspelScene
+        ├─ Play ToneGrid → GameToneGridScene
+        └─ Play BSharp → `bsharp.html` (standalone page, `vendor/bsharp/` subtree)
 ```
 
 | Scene | Responsibility |
@@ -59,6 +63,7 @@ BootScene
 | `Game2048Scene` | Arrow keys + swipe; syncs tiles after `board.move()` |
 | `Game2248Scene` | Drag path; animated gravity/refill after merge |
 | `GameKnoppenspelScene` | 8-bit LED match; shrinking timer; reveal overlay on correct/wrong |
+| `GameToneGridScene` | 16×16 step grid; six section tabs; song chain; scale picker; micro-timing nudge; Tone.js playback |
 
 Scenes rebuild UI on resize (`buildUi()`). Game scenes use `computeBoardLayout()` from `src/ui/layout.js` for cell size and board offset.
 
@@ -90,6 +95,7 @@ Scenes rebuild UI on resize (`buildUi()`). Game scenes use `computeBoardLayout()
 | `constants.js` | Grid sizes, swipe threshold, animation timings, spawn tier constants |
 | `knoppenspel.js` | 8-bit round generation, scoring phases, shrinking timer |
 | `binaryDisplay.js` | Byte ↔ MSB-left LED bits, reveal label formatting |
+| `toneGrid.js` | Multi-section 16×16 patterns, pentatonic pitch maps (C/D/E/F/G/A), micro-timing offsets, song chain advance |
 
 ## UI layer
 
@@ -108,7 +114,10 @@ Cookie-backed client storage (`src/persistence/`). No server.
 |------------|---------|
 | `game2048_highscore` / `game2248_highscore` / `game_knoppenspel_highscore` | Best score per mode |
 | `game2048_save` / `game2248_save` | JSON snapshot: `version`, `mode`, `grid`, `score`, `gameOver` |
+| `tonegrid_pattern` | JSON v2: `sections` (matrix + offsets per tab), `scaleRoot`, `songChain`, `loopSong`, `bpm`; v1 migrates into Verse |
 | `last_active_mode` | Which mode to prefer on resume |
+
+ToneGrid saves on cell edit, clear, BPM change, and scene shutdown (`toneGridStorage.js`). It does not use `getResumeTarget()`.
 
 **Lifecycle**
 
@@ -134,11 +143,11 @@ Scenes are not unit-tested. Manual QA: menu, both modes, mobile viewport, resume
 
 ```
 npm run dev     → Vite dev server (base `/`)
-npm run build   → dist/ (BASE_PATH=/stunning-tribble/ in CI)
+npm run build   → dist/ (BASE_PATH=/2048/ in CI)
 npm test        → Vitest
 ```
 
-GitHub Actions (`.github/workflows/deploy-pages.yml`): `npm ci` → production build (`--base /stunning-tribble/`) → `actions/deploy-pages`. The workflow also copies `dist/index.html`, `dist/assets/`, and `.nojekyll` to the **repository root on `main`**, because GitHub’s `pages-build-deployment` serves branch root files at `/stunning-tribble/`. Develop on **`dev`** using `index.source.html` (`npm run dev`); **`main`** root `index.html` is the production bundle (updated by CI). Do not run `npm run build` on `main` without `index.source.html`.
+GitHub Actions (`.github/workflows/deploy-pages.yml`): `npm ci` → production build (`--base /2048/`) → `actions/deploy-pages`. The workflow also copies `dist/index.html`, `dist/bsharp.html`, `dist/assets/`, `dist/static/`, and `.nojekyll` to the **repository root on `main`**, because GitHub’s `pages-build-deployment` serves branch root files at `/2048/`. Develop on **`dev`** using `index.source.html` (`npm run dev`); **`main`** root `index.html` is the production bundle (updated by CI). Do not run `npm run build` on `main` without `index.source.html`.
 
 ## Extension points
 

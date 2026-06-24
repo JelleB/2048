@@ -30,11 +30,12 @@ npm run test:watch    # re-run on file changes
 | `tests/test_gameStorage.js` | `src/persistence/gameStorage.js` | Saves, high scores, resume |
 | `tests/test_cookies.js` | `src/persistence/cookies.js` | Cookie read/write/delete |
 | `tests/test_gamePersistence.js` | `src/scenes/gamePersistence.js` | Init, persist, New/Save helpers |
-| `tests/test_layout.js` | `src/ui/layout.js` | Board layout and hit testing |
+| `tests/test_toneGrid.js` | `src/logic/toneGrid.js` | Sections, scales, offsets, chain advance, v1 migration |
+| `tests/test_toneGridStorage.js` | `src/persistence/toneGridStorage.js` | Pattern cookie save/load |
 
 **Naming rule:** `tests/test_<ModuleName>.js` mirrors `src/logic/<ModuleName>.js` or `src/persistence/<ModuleName>.js`.
 
-**Not unit-tested (by design):** Phaser scenes (`BootScene`, `MenuScene`, `Game2048Scene`, `Game2248Scene`, `GameKnoppenspelScene`), `src/ui/buttons.js`, `src/main.js` — use `npm run dev` and the manual QA checklist in [AGENTS.md](../AGENTS.md).
+**Not unit-tested (by design):** Phaser scenes (`BootScene`, `MenuScene`, `Game2048Scene`, `Game2248Scene`, `GameKnoppenspelScene`, `GameToneGridScene`), `src/audio/toneGridEngine.js`, `src/ui/buttons.js`, `src/main.js` — use `npm run dev` and the manual QA checklist in [AGENTS.md](../AGENTS.md).
 
 ### Coverage target
 

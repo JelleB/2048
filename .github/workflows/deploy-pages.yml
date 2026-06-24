@@ -9,8 +9,11 @@ on:
     paths-ignore:
       - 'assets/**'
       - 'index.html'
+      - 'bsharp.html'
+      - 'static/**'
       - '.nojekyll'
       - 'index.source.html'
+      - 'bsharp.source.html'
   workflow_dispatch:
 
 permissions:
@@ -38,15 +41,18 @@ jobs:
       - name: Build for GitHub Pages
         run: npm run build
         env:
-          BASE_PATH: /stunning-tribble/
+          BASE_PATH: /2048/
 
       - name: Normalize dist/index.html from Vite source entry
         run: cp dist/index.source.html dist/index.html
 
+      - name: Normalize dist/bsharp.html from Vite source entry
+        run: cp dist/bsharp.source.html dist/bsharp.html
+
       - name: Verify production bundle (not raw /src/main.js)
         shell: bash
         run: |
-          grep -q '/stunning-tribble/assets/' dist/index.html
+          grep -q '/2048/assets/' dist/index.html
           if grep -q '/src/main.js' dist/index.html; then
             echo 'dist/index.html still references dev entry /src/main.js'
             exit 1
@@ -55,15 +61,17 @@ jobs:
       - name: Sync built site to repository root for branch Pages deploy
         run: |
           cp dist/index.html index.html
-          rm -rf assets
+          cp dist/bsharp.html bsharp.html
+          rm -rf assets static
           cp -r dist/assets assets
+          cp -r dist/static static
           cp dist/.nojekyll .nojekyll
 
       - name: Commit production root files if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'chore: sync production index.html and assets for GitHub Pages'
-          file_pattern: index.html assets/** .nojekyll
+          file_pattern: index.html bsharp.html assets/** static/** .nojekyll
 
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -61,3 +61,34 @@ export const KNOPPEN_TIMER_FLOOR_ROUND = 100;
 
 /** Pause before auto-continue to the next round after a correct reveal (ms). */
 export const KNOPPEN_REVEAL_PAUSE_MS = 5000;
+
+/** ToneGrid matrix columns (time steps per measure). */
+export const TONEGRID_COLS = 16;
+
+/** ToneGrid matrix rows (pitch lanes). */
+export const TONEGRID_ROWS = 16;
+
+/** Default tempo for ToneGrid playback. */
+export const TONEGRID_DEFAULT_BPM = 120;
+
+/** Minimum allowed ToneGrid tempo. */
+export const TONEGRID_BPM_MIN = 60;
+
+/** Maximum allowed ToneGrid tempo. */
+export const TONEGRID_BPM_MAX = 200;
+
+/** Max micro-timing offset as a fraction of one 16th note (±40%). */
+export const TONEGRID_TIMING_OFFSET_MAX = 0.4;
+
+/** Fixed section ids for multi-part arrangements. */
+export const TONEGRID_SECTION_IDS = /** @type {const} */ ([
+  'verse',
+  'chorus',
+  'break',
+  'modulation',
+  'solo',
+  'finale',
+]);
+
+/** Selectable major-pentatonic roots. */
+export const TONEGRID_SCALE_ROOTS = /** @type {const} */ (['C', 'D', 'E', 'F', 'G', 'A']);
