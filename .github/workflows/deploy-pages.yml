@@ -58,6 +58,17 @@ jobs:
             exit 1
           fi
 
+      - name: Verify BSharp icon font paths in bundled CSS
+        shell: bash
+        run: |
+          css="dist/assets"/bsharp-*.css
+          if grep -q 'url(static/fonts/forkawesome' $css; then
+            echo 'BSharp CSS still points at assets/static/fonts (404 on Pages)'
+            grep -o 'url([^)]*forkawesome[^)]*)' $css | head -5
+            exit 1
+          fi
+          grep -q 'url(../static/fonts/forkawesome' $css
+
       - name: Sync built site to repository root for branch Pages deploy
         run: |
           cp dist/index.html index.html
