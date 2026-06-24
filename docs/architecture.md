@@ -41,7 +41,7 @@ Board rules, scoring, spawn pools, path validation, and gravity run in `src/logi
 | Tests | Vitest | Unit tests for logic and persistence |
 | Hosting | GitHub Pages | CI builds `dist/` on push to `main` |
 
-Base path for Pages: `/stunning-tribble/` (set via `BASE_PATH` in `.github/workflows/deploy-pages.yml`).
+Base path for Pages: `/2048/` (set via `BASE_PATH` in `.github/workflows/deploy-pages.yml`).
 
 ## Scene flow
 
@@ -143,11 +143,11 @@ Scenes are not unit-tested. Manual QA: menu, both modes, mobile viewport, resume
 
 ```
 npm run dev     → Vite dev server (base `/`)
-npm run build   → dist/ (BASE_PATH=/stunning-tribble/ in CI)
+npm run build   → dist/ (BASE_PATH=/2048/ in CI)
 npm test        → Vitest
 ```
 
-GitHub Actions (`.github/workflows/deploy-pages.yml`): `npm ci` → production build (`--base /stunning-tribble/`) → `actions/deploy-pages`. The workflow also copies `dist/index.html`, `dist/assets/`, and `.nojekyll` to the **repository root on `main`**, because GitHub’s `pages-build-deployment` serves branch root files at `/stunning-tribble/`. Develop on **`dev`** using `index.source.html` (`npm run dev`); **`main`** root `index.html` is the production bundle (updated by CI). Do not run `npm run build` on `main` without `index.source.html`.
+GitHub Actions (`.github/workflows/deploy-pages.yml`): `npm ci` → production build (`--base /2048/`) → `actions/deploy-pages`. The workflow also copies `dist/index.html`, `dist/bsharp.html`, `dist/assets/`, `dist/static/`, and `.nojekyll` to the **repository root on `main`**, because GitHub’s `pages-build-deployment` serves branch root files at `/2048/`. Develop on **`dev`** using `index.source.html` (`npm run dev`); **`main`** root `index.html` is the production bundle (updated by CI). Do not run `npm run build` on `main` without `index.source.html`.
 
 ## Extension points
 
