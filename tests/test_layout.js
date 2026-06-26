@@ -6,6 +6,7 @@ import {
   computeBoardLayout,
   pointerToCell,
   cellCenter,
+  pointerMovedBeyondThreshold,
   tileColor,
   tileTextColor,
 } from '../src/ui/layout.js';
@@ -50,6 +51,16 @@ describe('pointerToCell', () => {
     const inRow = offsetY + gap + cellSize * 0.5;
     expect(pointerToCell(betweenCols, inRow, layout, 5)).toBeNull();
     expect(pointerToCell(offsetX + gap * 0.5, offsetY + gap * 0.5, layout, 5)).toBeNull();
+  });
+});
+
+describe('pointerMovedBeyondThreshold', () => {
+  it('is false for small movement (tap)', () => {
+    expect(pointerMovedBeyondThreshold(100, 100, 105, 102, 8)).toBe(false);
+  });
+
+  it('is true when horizontal movement exceeds threshold', () => {
+    expect(pointerMovedBeyondThreshold(100, 100, 110, 100, 8)).toBe(true);
   });
 });
 

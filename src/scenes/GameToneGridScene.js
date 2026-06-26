@@ -6,6 +6,7 @@ import {
   ToneGridSongState,
   getTonicRows,
   SECTION_LABELS,
+  getSectionGridPalette,
 } from '../logic/toneGrid.js';
 import {
   createToneGridEngine,
@@ -23,14 +24,9 @@ import {
   TONEGRID_SECTION_IDS,
   TONEGRID_SCALE_ROOTS,
 } from '../constants.js';
-import { computeBoardLayout, pointerToCell, cellCenter } from '../ui/layout.js';
+import { computeBoardLayout, pointerToCell, cellCenter, pointerMovedBeyondThreshold } from '../ui/layout.js';
 import { makeButton } from '../ui/buttons.js';
 
-const CELL_INACTIVE = 0x2e2e3f;
-const CELL_TONIC_BG = 0x3a3a28;
-const CELL_ACTIVE = 0x00ffcc;
-const CELL_STROKE = 0x3e3e56;
-const TONIC_STROKE = 0xffcc66;
 const PLAYHEAD_COLOR = 0x00ffcc;
 const TAB_ACTIVE = 0x6a5a4a;
 const TAB_PLAYING = 0x4a8a7a;
@@ -58,6 +54,8 @@ export class GameToneGridScene extends Phaser.Scene {
     this.dragLastCell = null;
     /** @type {{ row: number, col: number, startX: number, startOffset: number } | null} */
     this.nudgeDrag = null;
+    /** @type {{ row: number, col: number, startX: number, startY: number, startOffset: number, gameObject: Phaser.GameObjects.Rectangle } | null} */
+    this.activeCellPress = null;
     /** @type {boolean} */
     this.paintMode = false;
     /** @type {Phaser.GameObjects.Container | null} */
@@ -69,9 +67,11 @@ export class GameToneGridScene extends Phaser.Scene {
         this.time.delayedCall(0, () => this.updateVisualPlayhead(step));
       }
     };
-    this.onSectionChange = () => {
+    this.onSectionChange = (event) => {
       this.time.delayedCall(0, () => {
-        if (this.state.isPlaying) {
+        const sectionId = event.detail?.sectionId;
+        if (this.state.isPlaying && sectionId) {
+          this.state.setEditSection(sectionId);
           this.buildUi();
         }
         this.syncCellColors();
@@ -410,19 +410,20 @@ export class GameToneGridScene extends Phaser.Scene {
     const step = cellSize + gap;
     const pitchMap = this.state.getPitchMap();
     const tonicRows = getTonicRows(pitchMap, this.state.getSectionTonic(this.state.editSectionId));
+    const palette = getSectionGridPalette(this.state.editSectionId);
 
     for (let r = 0; r < TONEGRID_ROWS; r += 1) {
       this.cellVisuals[r] = [];
       const isTonic = tonicRows.includes(r);
-      const baseColor = isTonic ? CELL_TONIC_BG : CELL_INACTIVE;
+      const baseColor = isTonic ? palette.tonicBg : palette.inactive;
       for (let c = 0; c < TONEGRID_COLS; c += 1) {
         const x = offsetX + gap + c * step + cellSize / 2;
         const y = offsetY + gap + r * step + cellSize / 2;
         const cell = this.add
           .rectangle(x, y, cellSize, cellSize, baseColor)
           .setInteractive({ useHandCursor: true })
-          .setData({ row: r, col: c, baseX: x, baseColor, isTonic });
-        cell.setStrokeStyle(isTonic && c === 0 ? 2 : 1, isTonic ? TONIC_STROKE : CELL_STROKE);
+          .setData({ row: r, col: c, baseX: x, baseColor, isTonic, palette });
+        cell.setStrokeStyle(isTonic && c === 0 ? 2 : 1, isTonic ? palette.tonicStroke : palette.stroke);
         this.cellVisuals[r][c] = cell;
       }
     }
@@ -500,17 +501,21 @@ export class GameToneGridScene extends Phaser.Scene {
 
       const section = this.state.getEditSection();
       if (section.matrix[r][c] === 1) {
-        this.nudgeDrag = {
+        this.activeCellPress = {
           row: r,
           col: c,
           startX: pointer.x,
+          startY: pointer.y,
           startOffset: section.offsets[r][c],
+          gameObject,
         };
+        this.nudgeDrag = null;
         this.paintMode = false;
         this.dragLastCell = null;
         return;
       }
 
+      this.activeCellPress = null;
       this.paintMode = true;
       this.dragLastCell = { row: r, col: c };
       this.handleCellToggle(r, c, gameObject);
@@ -518,6 +523,21 @@ export class GameToneGridScene extends Phaser.Scene {
 
     this.input.on('pointermove', (pointer) => {
       if (!pointer.isDown) return;
+
+      if (this.activeCellPress && !this.nudgeDrag && this.layout) {
+        const threshold = Math.max(8, this.layout.cellSize * 0.2);
+        if (pointerMovedBeyondThreshold(
+          this.activeCellPress.startX,
+          this.activeCellPress.startY,
+          pointer.x,
+          pointer.y,
+          threshold,
+        )) {
+          const { row, col, startX, startOffset } = this.activeCellPress;
+          this.nudgeDrag = { row, col, startX, startOffset };
+          this.activeCellPress = null;
+        }
+      }
 
       if (this.nudgeDrag) {
         const { row, col, startX, startOffset } = this.nudgeDrag;
@@ -552,6 +572,11 @@ export class GameToneGridScene extends Phaser.Scene {
     });
 
     this.input.on('pointerup', () => {
+      if (this.activeCellPress) {
+        const { row, col, gameObject } = this.activeCellPress;
+        this.handleCellToggle(row, col, gameObject);
+        this.activeCellPress = null;
+      }
       if (this.nudgeDrag) {
         saveToneGridPattern(this.state);
       }
@@ -594,9 +619,10 @@ export class GameToneGridScene extends Phaser.Scene {
     const active = section.matrix[row][col] === 1;
     const baseX = cell.getData('baseX');
     const baseColor = cell.getData('baseColor');
+    const palette = cell.getData('palette') ?? getSectionGridPalette(this.state.editSectionId);
     const { cellSize } = this.layout;
 
-    cell.setFillStyle(active ? CELL_ACTIVE : baseColor);
+    cell.setFillStyle(active ? palette.active : baseColor);
     cell.x = baseX + (active ? section.offsets[row][col] * cellSize : 0);
     cell.setScale(1);
     cell.setAlpha(1);
@@ -623,9 +649,10 @@ export class GameToneGridScene extends Phaser.Scene {
       this.playheadBar?.setVisible(true);
     } else {
       this.state.resetPlaybackPosition();
+      this.state.setEditSection(this.state.playSectionId);
       await this.audioEngine.start();
+      this.buildUi();
       this.playheadBar?.setVisible(true);
-      this.syncCellColors();
     }
     if (this.playBtnText) {
       this.playBtnText.setText(this.state.isPlaying ? 'Pause' : 'Play');

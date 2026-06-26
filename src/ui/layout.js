@@ -49,6 +49,19 @@ export function pointerToCell(px, py, layout, gridSize) {
 }
 
 /**
+ * Whether pointer movement should start a nudge-drag instead of a tap-toggle.
+ * @param {number} startX
+ * @param {number} startY
+ * @param {number} x
+ * @param {number} y
+ * @param {number} thresholdPx
+ * @returns {boolean}
+ */
+export function pointerMovedBeyondThreshold(startX, startY, x, y, thresholdPx) {
+  return Math.abs(x - startX) > thresholdPx || Math.abs(y - startY) > thresholdPx;
+}
+
+/**
  * Pixel center of a grid cell for tweens.
  * @param {{ offsetX: number, offsetY: number, cellSize: number, gap: number }} layout
  * @param {number} row

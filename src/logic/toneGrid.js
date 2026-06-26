@@ -44,6 +44,30 @@ export const SECTION_DEFAULT_REPEATS = /** @type {Record<SectionId, number>} */ 
   finale: 1,
 });
 
+/**
+ * Subtle per-section grid tints so section types are visually distinct in the editor.
+ * @typedef {{ inactive: number, tonicBg: number, active: number, stroke: number, tonicStroke: number }} SectionGridPalette
+ */
+
+/** @type {Record<SectionId, SectionGridPalette>} */
+export const SECTION_GRID_PALETTES = {
+  verse: { inactive: 0x2e2e3f, tonicBg: 0x3a3a28, active: 0x00ffcc, stroke: 0x3e3e56, tonicStroke: 0xffcc66 },
+  chorus: { inactive: 0x2a332e, tonicBg: 0x323a28, active: 0x44ffaa, stroke: 0x3a4e42, tonicStroke: 0xccff88 },
+  break: { inactive: 0x2a2e3f, tonicBg: 0x282a3a, active: 0x66ccff, stroke: 0x3a3e56, tonicStroke: 0x88ccff },
+  modulation: { inactive: 0x322e3f, tonicBg: 0x34283a, active: 0xcc88ff, stroke: 0x4a3e56, tonicStroke: 0xddaaff },
+  solo: { inactive: 0x3f352e, tonicBg: 0x3a3228, active: 0xffcc44, stroke: 0x564a3e, tonicStroke: 0xffdd88 },
+  finale: { inactive: 0x3f2e32, tonicBg: 0x3a282c, active: 0xff6699, stroke: 0x563e42, tonicStroke: 0xffaacc },
+};
+
+/**
+ * Returns the grid color palette for a section type.
+ * @param {SectionId} sectionId
+ * @returns {SectionGridPalette}
+ */
+export function getSectionGridPalette(sectionId) {
+  return SECTION_GRID_PALETTES[sectionId] ?? SECTION_GRID_PALETTES.verse;
+}
+
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 /** Major pentatonic semitone offsets from root (1–3–5–6–2 degrees). */
