@@ -38,20 +38,20 @@ describe('toneGridStorage', () => {
     resetToneGridStorageAdapter();
   });
 
-  it('saves and loads a v2 song state', () => {
+  it('saves and loads a v3 song state', () => {
     const state = new ToneGridSongState();
     state.toggleCell(0, 1);
     state.setEditSection('chorus');
     state.toggleCell(3, 7);
     state.setBpm(95);
-    state.setScaleRoot('F');
+    state.setSectionTonic('chorus', 'F');
     saveToneGridPattern(state);
 
     const loaded = loadToneGridPattern();
     expect(loaded).not.toBeNull();
     expect(loaded.sections.chorus.matrix[3][7]).toBe(1);
     expect(loaded.bpm).toBe(95);
-    expect(loaded.scaleRoot).toBe('F');
+    expect(loaded.getSectionTonic('chorus')).toBe('F');
   });
 
   it('loads v1 cookie via migration', () => {
@@ -81,12 +81,12 @@ describe('toneGridStorage', () => {
     expect(loadToneGridPattern()).toBeNull();
   });
 
-  it('returns null for invalid v2 sections', () => {
+  it('returns null for invalid v3 sections payload', () => {
     const storage = createMemoryStorage();
     setToneGridStorageAdapter(storage);
     storage.set(
       'tonegrid_pattern',
-      JSON.stringify({ version: 2, bpm: 120, sections: {} }),
+      JSON.stringify({ version: 3, bpm: 120, sections: {} }),
     );
     expect(loadToneGridPattern()).not.toBeNull();
   });

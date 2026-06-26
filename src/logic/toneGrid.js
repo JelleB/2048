@@ -1,5 +1,6 @@
 /**
- * Pure ToneGrid song state: multi-section 16×16 patterns, scales, micro-timing offsets.
+ * Pure ToneGrid song state: multi-section 16×16 patterns, scales, micro-timing offsets,
+ * and block-based song arrangement with per-section tonics.
  * Shared by Tone.js audio engine and Phaser scene (no framework imports).
  */
 import {
@@ -33,29 +34,59 @@ export const SECTION_LABELS = /** @type {Record<SectionId, string>} */ ({
   finale: 'Finale',
 });
 
-/** Default song-chain play order. */
-export const DEFAULT_SONG_CHAIN = /** @type {SectionId[]} */ ([
-  'verse',
-  'chorus',
-  'verse',
-  'chorus',
-  'break',
-  'chorus',
-  'finale',
-]);
+/** Default repeat counts when a block type is added to the arrangement. */
+export const SECTION_DEFAULT_REPEATS = /** @type {Record<SectionId, number>} */ ({
+  verse: 4,
+  chorus: 2,
+  break: 1,
+  modulation: 4,
+  solo: 4,
+  finale: 1,
+});
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 /** Major pentatonic semitone offsets from root (1–3–5–6–2 degrees). */
 const PENTATONIC_SEMITONES = [0, 2, 4, 7, 9];
 
-export const TONEGRID_STATE_VERSION = 2;
+export const TONEGRID_STATE_VERSION = 3;
 
 /**
  * C-major pentatonic pitch map (legacy export; same as buildPitchMap('C')).
  * @type {readonly string[]}
  */
 export const NOTE_PITCH_MAP = buildPitchMap('C');
+
+/**
+ * One block in the song arrangement: section type plus how many 16-step bars to repeat.
+ */
+export class SongBlock {
+  /**
+   * @param {SectionId} sectionId
+   * @param {number} repeats
+   */
+  constructor(sectionId, repeats) {
+    this.sectionId = sectionId;
+    this.repeats = Math.max(1, Math.floor(Number(repeats)) || 1);
+  }
+
+  /**
+   * @param {unknown} data
+   * @returns {SongBlock | null}
+   */
+  static fromJSON(data) {
+    if (!data || typeof data !== 'object') return null;
+    const obj = /** @type {{ sectionId?: unknown, repeats?: unknown }} */ (data);
+    const id = /** @type {SectionId} */ (obj.sectionId);
+    if (!TONEGRID_SECTION_IDS.includes(id)) return null;
+    return new SongBlock(id, Number(obj.repeats));
+  }
+}
+
+/** Starting arrangement: one verse block only. */
+export const DEFAULT_SONG_BLOCKS = /** @type {SongBlock[]} */ ([
+  new SongBlock('verse', SECTION_DEFAULT_REPEATS.verse),
+]);
 
 /**
  * Clamps tempo to the allowed ToneGrid BPM range.
@@ -135,6 +166,146 @@ export function getTonicRows(pitchMap, scaleRoot) {
     if (letter === scaleRoot) rows.push(row);
   });
   return rows;
+}
+
+/**
+ * Returns the next selectable scale root, capped at the highest root.
+ * @param {ScaleRoot} root
+ * @returns {ScaleRoot}
+ */
+export function nextScaleRoot(root) {
+  const idx = TONEGRID_SCALE_ROOTS.indexOf(root);
+  if (idx < 0) return 'C';
+  return TONEGRID_SCALE_ROOTS[Math.min(idx + 1, TONEGRID_SCALE_ROOTS.length - 1)];
+}
+
+/**
+ * @param {SectionPattern} section
+ * @returns {boolean}
+ */
+export function isSectionEmpty(section) {
+  return section.matrix.every((row) => row.every((v) => v === 0));
+}
+
+/**
+ * Deep-copies matrix and offsets from one section to another.
+ * @param {SectionPattern} from
+ * @param {SectionPattern} to
+ */
+export function copySectionPattern(from, to) {
+  for (let r = 0; r < TONEGRID_ROWS; r += 1) {
+    to.matrix[r] = [...from.matrix[r]];
+    to.offsets[r] = [...from.offsets[r]];
+  }
+}
+
+/**
+ * Generates a sparse break pattern on downbeats when the user has not edited break yet.
+ * @param {SectionPattern} section
+ * @param {ScaleRoot} tonic
+ */
+export function composeBreakSection(section, tonic) {
+  const pitchMap = buildPitchMap(tonic);
+  const tonicRows = getTonicRows(pitchMap, tonic);
+  const midRow = tonicRows[Math.floor(tonicRows.length / 2)] ?? 9;
+  const hiRow = tonicRows[0] ?? midRow;
+  for (let c = 0; c < TONEGRID_COLS; c += 4) {
+    section.matrix[midRow][c] = 1;
+  }
+  for (let c = 2; c < TONEGRID_COLS; c += 8) {
+    section.matrix[hiRow][c] = 1;
+  }
+}
+
+/**
+ * Initializes modulation from verse (pattern copy + tonic one step up) when not yet edited.
+ * @param {ToneGridSongState} state
+ */
+export function ensureModulationFromVerse(state) {
+  if (state.isSectionEdited('modulation')) return;
+  copySectionPattern(state.sections.verse, state.sections.modulation);
+  state.setSectionTonic('modulation', nextScaleRoot(state.getSectionTonic('verse')));
+}
+
+/**
+ * Collapses a flat v2 song chain into block objects with repeat counts.
+ * @param {SectionId[]} chain
+ * @returns {SongBlock[]}
+ */
+export function collapseChainToBlocks(chain) {
+  /** @type {SongBlock[]} */
+  const blocks = [];
+  for (const id of chain) {
+    if (!TONEGRID_SECTION_IDS.includes(id)) continue;
+    const last = blocks[blocks.length - 1];
+    if (last && last.sectionId === id) {
+      last.repeats += 1;
+    } else {
+      blocks.push(new SongBlock(id, 1));
+    }
+  }
+  return blocks.length > 0 ? blocks : [...DEFAULT_SONG_BLOCKS];
+}
+
+/**
+ * @typedef {{ playBlockIndex: number, playRepeatCount: number, playSectionId: SectionId, done: boolean }} BarAdvanceResult
+ */
+
+/**
+ * Computes playback position after one 16-step bar completes.
+ * @param {SectionId} playSectionId
+ * @param {number} playBlockIndex
+ * @param {number} playRepeatCount Completed bars in the current block before this bar.
+ * @param {SongBlock[]} songBlocks
+ * @param {boolean} loopSong
+ * @returns {BarAdvanceResult}
+ */
+export function advanceAfterBar(playSectionId, playBlockIndex, playRepeatCount, songBlocks, loopSong) {
+  if (!songBlocks.length) {
+    return { playBlockIndex: 0, playRepeatCount: 0, playSectionId, done: true };
+  }
+
+  const block = songBlocks[playBlockIndex];
+  if (!block || block.sectionId !== playSectionId) {
+    return {
+      playBlockIndex: 0,
+      playRepeatCount: 0,
+      playSectionId: songBlocks[0].sectionId,
+      done: false,
+    };
+  }
+
+  const nextRepeatCount = playRepeatCount + 1;
+  if (nextRepeatCount < block.repeats) {
+    return {
+      playBlockIndex,
+      playRepeatCount: nextRepeatCount,
+      playSectionId,
+      done: false,
+    };
+  }
+
+  if (playBlockIndex < songBlocks.length - 1) {
+    const nextBlock = songBlocks[playBlockIndex + 1];
+    return {
+      playBlockIndex: playBlockIndex + 1,
+      playRepeatCount: 0,
+      playSectionId: nextBlock.sectionId,
+      done: false,
+    };
+  }
+
+  if (loopSong) {
+    const first = songBlocks[0];
+    return {
+      playBlockIndex: 0,
+      playRepeatCount: 0,
+      playSectionId: first.sectionId,
+      done: false,
+    };
+  }
+
+  return { playBlockIndex, playRepeatCount: nextRepeatCount, playSectionId, done: true };
 }
 
 /**
@@ -234,39 +405,49 @@ export function createEmptySections() {
 }
 
 /**
- * Computes the next section id after the current one in the song chain.
- * @param {SectionId} playSectionId
- * @param {SectionId[]} songChain
- * @param {boolean} loopSong
- * @returns {SectionId | null}
+ * Creates default per-section tonics (all C).
+ * @returns {Record<SectionId, ScaleRoot>}
  */
-export function advanceSection(playSectionId, songChain, loopSong) {
-  if (!songChain.length) return null;
-  const idx = songChain.indexOf(playSectionId);
-  if (idx === -1) return loopSong ? songChain[0] : null;
-  if (idx < songChain.length - 1) return songChain[idx + 1];
-  return loopSong ? songChain[0] : null;
+export function createDefaultSectionTonics() {
+  /** @type {Record<SectionId, ScaleRoot>} */
+  const tonics = /** @type {Record<SectionId, ScaleRoot>} */ ({});
+  for (const id of TONEGRID_SECTION_IDS) {
+    tonics[id] = 'C';
+  }
+  return tonics;
 }
 
 /**
- * Full ToneGrid song: sections, scale, arrangement chain, transport metadata.
+ * Full ToneGrid song: sections, per-section tonics, block arrangement, transport metadata.
  */
 export class ToneGridSongState {
   constructor() {
     /** @type {Record<SectionId, SectionPattern>} */
     this.sections = createEmptySections();
+    /** @type {Record<SectionId, ScaleRoot>} */
+    this.sectionTonics = createDefaultSectionTonics();
+    /** @type {Record<SectionId, boolean>} */
+    this.sectionEdited = /** @type {Record<SectionId, boolean>} */ ({});
+    for (const id of TONEGRID_SECTION_IDS) {
+      this.sectionEdited[id] = false;
+    }
     this.currentStep = 0;
     this.isPlaying = false;
     this.bpm = TONEGRID_DEFAULT_BPM;
-    /** @type {ScaleRoot} */
-    this.scaleRoot = 'C';
     /** @type {SectionId} */
     this.editSectionId = 'verse';
     /** @type {SectionId} */
     this.playSectionId = 'verse';
-    /** @type {SectionId[]} */
-    this.songChain = [...DEFAULT_SONG_CHAIN];
+    /** @type {SongBlock[]} */
+    this.songBlocks = DEFAULT_SONG_BLOCKS.map((b) => new SongBlock(b.sectionId, b.repeats));
+    this.playBlockIndex = 0;
+    this.playRepeatCount = 0;
     this.loopSong = true;
+  }
+
+  /** Tonic of the section currently being edited (legacy alias for scale picker). */
+  get scaleRoot() {
+    return this.getSectionTonic(this.editSectionId);
   }
 
   /** @returns {SectionPattern} */
@@ -281,6 +462,41 @@ export class ToneGridSongState {
 
   /**
    * @param {SectionId} id
+   * @returns {ScaleRoot}
+   */
+  getSectionTonic(id) {
+    return this.sectionTonics[id] ?? 'C';
+  }
+
+  /**
+   * @param {SectionId} id
+   * @param {ScaleRoot} root
+   */
+  setSectionTonic(id, root) {
+    if (TONEGRID_SCALE_ROOTS.includes(root) && TONEGRID_SECTION_IDS.includes(id)) {
+      this.sectionTonics[id] = root;
+    }
+  }
+
+  /**
+   * @param {SectionId} id
+   * @returns {boolean}
+   */
+  isSectionEdited(id) {
+    return Boolean(this.sectionEdited[id]);
+  }
+
+  /**
+   * @param {SectionId} id
+   */
+  markSectionEdited(id) {
+    if (TONEGRID_SECTION_IDS.includes(id)) {
+      this.sectionEdited[id] = true;
+    }
+  }
+
+  /**
+   * @param {SectionId} id
    */
   setEditSection(id) {
     if (TONEGRID_SECTION_IDS.includes(id)) {
@@ -289,12 +505,10 @@ export class ToneGridSongState {
   }
 
   /**
-   * @param {ScaleRoot} root
+   * @param {ScaleRoot} root Sets tonic for the edit section.
    */
   setScaleRoot(root) {
-    if (TONEGRID_SCALE_ROOTS.includes(root)) {
-      this.scaleRoot = root;
-    }
+    this.setSectionTonic(this.editSectionId, root);
   }
 
   /**
@@ -303,11 +517,13 @@ export class ToneGridSongState {
    * @returns {0 | 1}
    */
   toggleCell(row, col) {
+    this.markSectionEdited(this.editSectionId);
     return this.getEditSection().toggleCell(row, col);
   }
 
   clearEditSection() {
     this.getEditSection().clear();
+    this.markSectionEdited(this.editSectionId);
   }
 
   /**
@@ -317,39 +533,108 @@ export class ToneGridSongState {
    * @returns {number}
    */
   nudgeCellOffset(row, col, delta) {
+    this.markSectionEdited(this.editSectionId);
     return this.getEditSection().nudgeCellOffset(row, col, delta);
+  }
+
+  /**
+   * Prepares a section before playback (auto-compose break, init modulation).
+   * @param {SectionId} id
+   */
+  prepareSectionForPlayback(id) {
+    if (id === 'break' && !this.isSectionEdited('break') && isSectionEmpty(this.sections.break)) {
+      composeBreakSection(this.sections.break, this.getSectionTonic('break'));
+    }
+    if (id === 'modulation') {
+      ensureModulationFromVerse(this);
+    }
   }
 
   /**
    * @param {SectionId} id
    */
-  appendToChain(id) {
-    if (TONEGRID_SECTION_IDS.includes(id)) {
-      this.songChain.push(id);
+  addBlock(id) {
+    if (!TONEGRID_SECTION_IDS.includes(id)) return;
+    if (id === 'modulation') {
+      ensureModulationFromVerse(this);
     }
+    this.songBlocks.push(new SongBlock(id, SECTION_DEFAULT_REPEATS[id]));
   }
 
   /**
    * @param {number} index
-   * @returns {boolean} False when chain would become empty.
+   * @returns {boolean} False when arrangement would become empty.
    */
-  removeFromChain(index) {
-    if (this.songChain.length <= 1) return false;
-    if (index < 0 || index >= this.songChain.length) return false;
-    this.songChain.splice(index, 1);
+  removeBlock(index) {
+    if (this.songBlocks.length <= 1) return false;
+    if (index < 0 || index >= this.songBlocks.length) return false;
+    this.songBlocks.splice(index, 1);
     return true;
   }
 
   /**
-   * @returns {SectionId | null}
+   * @param {number} index
+   * @param {SectionId} id
+   */
+  setBlockType(index, id) {
+    if (index < 0 || index >= this.songBlocks.length) return;
+    if (!TONEGRID_SECTION_IDS.includes(id)) return;
+    if (id === 'modulation') {
+      ensureModulationFromVerse(this);
+    }
+    this.songBlocks[index].sectionId = id;
+    this.songBlocks[index].repeats = SECTION_DEFAULT_REPEATS[id];
+  }
+
+  /**
+   * @param {number} index
+   * @param {number} repeats
+   * @returns {number}
+   */
+  setBlockRepeats(index, repeats) {
+    if (index < 0 || index >= this.songBlocks.length) return 1;
+    const n = Math.max(1, Math.floor(Number(repeats)) || 1);
+    this.songBlocks[index].repeats = n;
+    return n;
+  }
+
+  /**
+   * Resets playback cursors to the first block.
+   */
+  resetPlaybackPosition() {
+    this.playBlockIndex = 0;
+    this.playRepeatCount = 0;
+    const first = this.songBlocks[0];
+    if (first) {
+      this.playSectionId = first.sectionId;
+      this.prepareSectionForPlayback(first.sectionId);
+    }
+    this.currentStep = 0;
+  }
+
+  /**
+   * @returns {SectionId | null} Next section id, or null when song ends.
    */
   advancePlaySection() {
-    const next = advanceSection(this.playSectionId, this.songChain, this.loopSong);
-    if (next) {
-      this.playSectionId = next;
+    const result = advanceAfterBar(
+      this.playSectionId,
+      this.playBlockIndex,
+      this.playRepeatCount,
+      this.songBlocks,
+      this.loopSong,
+    );
+    this.playBlockIndex = result.playBlockIndex;
+    this.playRepeatCount = result.playRepeatCount;
+    if (result.done) {
       this.currentStep = 0;
+      return null;
     }
-    return next;
+    if (result.playSectionId !== this.playSectionId) {
+      this.prepareSectionForPlayback(result.playSectionId);
+    }
+    this.playSectionId = result.playSectionId;
+    this.currentStep = 0;
+    return this.playSectionId;
   }
 
   /**
@@ -361,9 +646,14 @@ export class ToneGridSongState {
     return this.bpm;
   }
 
-  /** @returns {readonly string[]} */
+  /** Pitch map for the section currently playing. */
+  getPlayPitchMap() {
+    return buildPitchMap(this.getSectionTonic(this.playSectionId));
+  }
+
+  /** Pitch map for the section currently being edited. */
   getPitchMap() {
-    return buildPitchMap(this.scaleRoot);
+    return buildPitchMap(this.getSectionTonic(this.editSectionId));
   }
 
   /**
@@ -378,9 +668,10 @@ export class ToneGridSongState {
     return {
       version: TONEGRID_STATE_VERSION,
       bpm: this.bpm,
-      scaleRoot: this.scaleRoot,
+      sectionTonics: { ...this.sectionTonics },
+      sectionEdited: { ...this.sectionEdited },
       editSectionId: this.editSectionId,
-      songChain: [...this.songChain],
+      songBlocks: this.songBlocks.map((b) => ({ sectionId: b.sectionId, repeats: b.repeats })),
       loopSong: this.loopSong,
       sections,
     };
@@ -397,19 +688,39 @@ export class ToneGridSongState {
     if (obj.version === 1) {
       return ToneGridSongState.fromV1(obj);
     }
+    if (obj.version === 2) {
+      return ToneGridSongState.fromV2(obj);
+    }
     if (obj.version !== TONEGRID_STATE_VERSION) return null;
 
     const state = new ToneGridSongState();
     state.bpm = clampBpm(Number(obj.bpm));
-    const root = /** @type {ScaleRoot} */ (obj.scaleRoot);
-    if (TONEGRID_SCALE_ROOTS.includes(root)) state.scaleRoot = root;
+
+    const tonics = obj.sectionTonics;
+    if (tonics && typeof tonics === 'object') {
+      for (const id of TONEGRID_SECTION_IDS) {
+        const root = /** @type {ScaleRoot} */ (/** @type {Record<string, unknown>} */ (tonics)[id]);
+        if (TONEGRID_SCALE_ROOTS.includes(root)) state.sectionTonics[id] = root;
+      }
+    }
+
+    const edited = obj.sectionEdited;
+    if (edited && typeof edited === 'object') {
+      for (const id of TONEGRID_SECTION_IDS) {
+        if (typeof /** @type {Record<string, unknown>} */ (edited)[id] === 'boolean') {
+          state.sectionEdited[id] = /** @type {boolean} */ (/** @type {Record<string, unknown>} */ (edited)[id]);
+        }
+      }
+    }
 
     const editId = /** @type {SectionId} */ (obj.editSectionId);
     if (TONEGRID_SECTION_IDS.includes(editId)) state.editSectionId = editId;
 
-    if (Array.isArray(obj.songChain) && obj.songChain.length > 0) {
-      const chain = obj.songChain.filter((id) => TONEGRID_SECTION_IDS.includes(/** @type {SectionId} */ (id)));
-      if (chain.length > 0) state.songChain = /** @type {SectionId[]} */ (chain);
+    if (Array.isArray(obj.songBlocks) && obj.songBlocks.length > 0) {
+      const blocks = obj.songBlocks
+        .map((b) => SongBlock.fromJSON(b))
+        .filter((b) => b !== null);
+      if (blocks.length > 0) state.songBlocks = /** @type {SongBlock[]} */ (blocks);
     }
     if (typeof obj.loopSong === 'boolean') state.loopSong = obj.loopSong;
 
@@ -437,6 +748,47 @@ export class ToneGridSongState {
     const state = new ToneGridSongState();
     state.bpm = clampBpm(Number(obj.bpm));
     state.sections.verse.matrix = obj.matrix.map((row) => [...row]);
+    state.sectionEdited.verse = true;
+    return state;
+  }
+
+  /**
+   * Migrates v2 flat songChain into v3 blocks.
+   * @param {Record<string, unknown>} obj
+   * @returns {ToneGridSongState | null}
+   */
+  static fromV2(obj) {
+    const state = new ToneGridSongState();
+    state.bpm = clampBpm(Number(obj.bpm));
+
+    const root = /** @type {ScaleRoot} */ (obj.scaleRoot);
+    if (TONEGRID_SCALE_ROOTS.includes(root)) {
+      for (const id of TONEGRID_SECTION_IDS) {
+        state.sectionTonics[id] = root;
+      }
+    }
+
+    const editId = /** @type {SectionId} */ (obj.editSectionId);
+    if (TONEGRID_SECTION_IDS.includes(editId)) state.editSectionId = editId;
+
+    if (Array.isArray(obj.songChain) && obj.songChain.length > 0) {
+      const chain = obj.songChain.filter((id) => TONEGRID_SECTION_IDS.includes(/** @type {SectionId} */ (id)));
+      if (chain.length > 0) {
+        state.songBlocks = collapseChainToBlocks(/** @type {SectionId[]} */ (chain));
+      }
+    }
+    if (typeof obj.loopSong === 'boolean') state.loopSong = obj.loopSong;
+
+    const sectionsObj = obj.sections;
+    if (sectionsObj && typeof sectionsObj === 'object') {
+      for (const id of TONEGRID_SECTION_IDS) {
+        const parsed = SectionPattern.fromJSON(/** @type {object} */ (sectionsObj)[id]);
+        if (parsed) {
+          state.sections[id] = parsed;
+          if (!isSectionEmpty(parsed)) state.sectionEdited[id] = true;
+        }
+      }
+    }
     return state;
   }
 }
