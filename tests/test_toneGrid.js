@@ -22,6 +22,8 @@ import {
   DEFAULT_SONG_BLOCKS,
   NOTE_PITCH_MAP,
   SEQUENCER_CONFIG,
+  getSectionGridPalette,
+  SECTION_GRID_PALETTES,
 } from '../src/logic/toneGrid.js';
 import {
   TONEGRID_BPM_MAX,
@@ -97,6 +99,27 @@ describe('SECTION_DEFAULT_REPEATS', () => {
     for (const id of TONEGRID_SECTION_IDS) {
       expect(SECTION_DEFAULT_REPEATS[id]).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('getSectionGridPalette', () => {
+  it('returns a palette for every section type', () => {
+    for (const id of TONEGRID_SECTION_IDS) {
+      const palette = getSectionGridPalette(id);
+      expect(palette.inactive).toBeTypeOf('number');
+      expect(palette.active).toBeTypeOf('number');
+      expect(palette.tonicBg).toBeTypeOf('number');
+    }
+  });
+
+  it('uses distinct active colors per section type', () => {
+    const actives = TONEGRID_SECTION_IDS.map((id) => getSectionGridPalette(id).active);
+    expect(new Set(actives).size).toBe(TONEGRID_SECTION_IDS.length);
+  });
+
+  it('falls back to verse for unknown ids', () => {
+    expect(getSectionGridPalette(/** @type {import('../src/logic/toneGrid.js').SectionId} */ ('unknown')))
+      .toEqual(SECTION_GRID_PALETTES.verse);
   });
 });
 
