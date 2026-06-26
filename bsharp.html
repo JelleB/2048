@@ -44,9 +44,9 @@
                 margin-bottom: 20px;
             }
         </style>
-      <script type="module" crossorigin src="/2048/assets/bsharp-jMLyNXyl.js"></script>
-      <link rel="modulepreload" crossorigin href="/2048/assets/navigation-DbYHYnVW.js">
-      <link rel="stylesheet" crossorigin href="/2048/assets/bsharp-CBNQtWe4.css">
+      <script type="module" crossorigin src="/2048/assets/bsharp-C64GYDH9.js"></script>
+      <link rel="modulepreload" crossorigin href="/2048/assets/index-BlcpY9V9.js">
+      <link rel="stylesheet" crossorigin href="/2048/assets/bsharp-YgZ3ULgA.css">
     </head>
 
     <body class="colorscheme-dark">
@@ -208,6 +208,16 @@
                     </select>
                 </div>
                 <div class="entry-row">
+                    <label for="instrument_setting">Instrument:</label>
+                    <select class="selector" name="instrument_setting" id="instrument-selector">
+                        <option value="piano_1">Piano</option>
+                        <option value="guitar">Guitar</option>
+                        <option value="ukulele">Ukulele</option>
+                        <option value="hammond">Hammond organ</option>
+                        <option value="random">Random</option>
+                    </select>
+                </div>
+                <div class="entry-row">
                     <label for="chord_selection_mode_setting">Chord selection:</label>
                     <select class="selector" name="chord_selection_mode_setting" id="chord-selection-mode-selector">
                         <option value="random">Random</option>
@@ -231,13 +241,24 @@
             </div>
         </div>
         <div class="control-wrapper">
+            <div id="challenge-hud" class="challenge-hud visible" aria-hidden="false">
+                <div class="challenge-hud-row">
+                    <span class="challenge-label">Level <span id="challenge-level">1</span></span>
+                    <span class="challenge-timer" id="challenge-timer" role="timer" aria-live="polite">0</span>
+                </div>
+                <div class="challenge-hud-row">
+                    <span class="challenge-points"><span id="challenge-points">0</span> / <span id="challenge-goal">120</span> pts</span>
+                    <span class="challenge-replays" id="challenge-replays">3 listens left</span>
+                </div>
+                <div class="challenge-hud-row challenge-focus-row">
+                    <span class="challenge-focus"><span id="challenge-focus-name">Yellow</span>: <span id="challenge-focus-count">0</span> / <span id="challenge-focus-goal">6</span></span>
+                </div>
+            </div>
+            <div id="challenge-toast" class="challenge-toast" aria-live="polite"></div>
             <div class="control-container">
                 <div class="controls">
                     <a id="play-button" class="deactivated" onclick="play_audio()">
                         <i class="fa fa-play" aria-hidden="true"></i>
-                    </a>
-                    <a id="next-chord" class="deactivated" onclick="next_audio()">
-                        <i class="fa fa-arrow-right" aria-hidden="true"></i>
                     </a>
                 </div>
             </div>
@@ -442,8 +463,8 @@
                 <i class="fa fa-refresh" aria-hidden="true"></i>
             </a>
         </div>
-        <div class="selectors">
-            <select class="selector" name="chords" id="chord-selector" onchange="change_selector()">
+        <div class="selectors challenge-hidden">
+            <select class="selector" name="chords" id="chord-selector" onchange="change_selector()" hidden>
             <optgroup label="White chords">
                 <option value="red" hidden>Level 0: Red (C E G)</option>
                 <option value="yellow">Level 1: Yellow (C F A)</option>
@@ -520,6 +541,15 @@
         </defs>
     </svg>
 </div>
+        <div class="modal-overlay level-up-overlay" id="level-up-overlay" aria-hidden="true" role="dialog" aria-labelledby="level-up-title">
+            <div class="modal-content level-up-content">
+                <div class="level-up-confetti" aria-hidden="true"></div>
+                <p class="level-up-emoji" aria-hidden="true">&#127881;</p>
+                <h2 id="level-up-title">Level up!</h2>
+                <p id="level-up-detail"></p>
+                <button class="button" type="button" onclick="dismiss_level_up()">Continue</button>
+            </div>
+        </div>
         <div class="modal-overlay" id="screen-pinning-modal">
         <div class="modal-content">
             <p><strong>Screen Pinning</strong> locks the app on screen so children can't navigate away.</p>
