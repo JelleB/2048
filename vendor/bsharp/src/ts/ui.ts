@@ -6,7 +6,7 @@ import {
     DEFAULT_SHOW_CHORD_MODE, DEFAULT_REVEAL_CHORD_MODE, DEFAULT_CHORD_DISPLAY_MODE,
     DEFAULT_SINGLE_NOTE_MODE, DEFAULT_SINGLE_NOTE_CORRECTNESS_MODE,
     DEFAULT_PERSIST_REACTION_FACE, DEFAULT_ENABLE_ONBOARDING_HINTS, DEFAULT_COLOR_SCHEME,
-    DEFAULT_CHORD_SELECTION_MODE,
+    DEFAULT_CHORD_SELECTION_MODE, DEFAULT_INSTRUMENT,
 } from './state';
 import {
     calculatePercentage, calculateNeutralLevel, getCatEmoji, normalizeStatsObject
@@ -397,6 +397,7 @@ function getProfileSettings(): {
     single_note_correctness_mode: string; persist_reaction_face: boolean;
     enable_onboarding_hints: boolean; color_scheme: string;
     chord_selection_mode: string;
+    current_instrument: string;
 } {
     const profileContainer = document.getElementById('profile-info-container')!;
     const profileNameElem = document.getElementById('profile_name_setting') as HTMLInputElement;
@@ -422,6 +423,8 @@ function getProfileSettings(): {
     const enableOnboardingHints = (document.getElementById('enable_onboarding_hints_setting') as HTMLInputElement).checked;
     const colorScheme = (document.getElementById('color-scheme-selector') as HTMLSelectElement).value;
     const chordSelectionMode = (document.getElementById('chord-selection-mode-selector') as HTMLSelectElement).value;
+    const instrumentElem = document.getElementById('instrument-selector') as HTMLSelectElement | null;
+    const currentInstrument = instrumentElem ? instrumentElem.value : DEFAULT_INSTRUMENT;
 
     return {
         name: profileName,
@@ -437,6 +440,7 @@ function getProfileSettings(): {
         enable_onboarding_hints: enableOnboardingHints,
         color_scheme: colorScheme,
         chord_selection_mode: chordSelectionMode,
+        current_instrument: currentInstrument,
     };
 }
 
@@ -508,6 +512,10 @@ function populateProfileSettings(): void {
     (document.getElementById('enable_onboarding_hints_setting') as HTMLInputElement).checked = profile.enable_onboarding_hints;
     (document.getElementById('color-scheme-selector') as HTMLSelectElement).value = profile.color_scheme;
     (document.getElementById('chord-selection-mode-selector') as HTMLSelectElement).value = profile.chord_selection_mode;
+    const instrumentSelector = document.getElementById('instrument-selector') as HTMLSelectElement | null;
+    if (instrumentSelector) {
+        instrumentSelector.value = profile.current_instrument || DEFAULT_INSTRUMENT;
+    }
 
     profileDialog.dataset.id = String(profile.id);
 
@@ -562,6 +570,8 @@ export function openProfileAdder(): void {
     (document.getElementById('enable_onboarding_hints_setting') as HTMLInputElement).checked = DEFAULT_ENABLE_ONBOARDING_HINTS;
     (document.getElementById('color-scheme-selector') as HTMLSelectElement).value = DEFAULT_COLOR_SCHEME;
     (document.getElementById('chord-selection-mode-selector') as HTMLSelectElement).value = DEFAULT_CHORD_SELECTION_MODE;
+    const instrumentSelector = document.getElementById('instrument-selector') as HTMLSelectElement | null;
+    if (instrumentSelector) instrumentSelector.value = DEFAULT_INSTRUMENT;
 
     // Pre-select the first icon
     const firstIcon = profileContainer.querySelector("input[name='profile_icon_selector']") as HTMLInputElement | null;
@@ -600,6 +610,7 @@ export function addProfile(): void {
             newProfileValues.color_scheme,
             newProfileValues.chord_selection_mode,
         );
+        profile.current_instrument = newProfileValues.current_instrument;
         STATE.profiles[profile.id] = profile;
         saveState();
         closeProfileAdder();
@@ -636,6 +647,7 @@ export function submitProfileChanges(): void {
     currentProfile.enable_onboarding_hints = profileValues.enable_onboarding_hints;
     currentProfile.color_scheme = profileValues.color_scheme;
     currentProfile.chord_selection_mode = profileValues.chord_selection_mode;
+    currentProfile.current_instrument = profileValues.current_instrument;
 
     saveState();
 

@@ -23,6 +23,10 @@ export const DEFAULT_PERSIST_REACTION_FACE = true;
 export const DEFAULT_ENABLE_ONBOARDING_HINTS = true;
 export const DEFAULT_COLOR_SCHEME = 'dark';
 export const DEFAULT_CHORD_SELECTION_MODE = 'random';
+export const DEFAULT_CHALLENGE_MODE = true;
+export const DEFAULT_CHALLENGE_LEVEL_INDEX = 0;
+export const DEFAULT_CHALLENGE_POINTS = 0;
+export const DEFAULT_CHALLENGE_FOCUS_CORRECT = 0;
 
 export let STATE: AppState = null!;
 export let _SESSION_HISTORY: Record<string, Record<string, SessionStats[]>> | null = null;
@@ -71,6 +75,9 @@ export function newProfile(
     enableOnboardingHints = DEFAULT_ENABLE_ONBOARDING_HINTS,
     colorScheme = DEFAULT_COLOR_SCHEME,
     chordSelectionMode = DEFAULT_CHORD_SELECTION_MODE,
+    challengeMode = DEFAULT_CHALLENGE_MODE,
+    challengeLevelIndex = DEFAULT_CHALLENGE_LEVEL_INDEX,
+    challengePoints = DEFAULT_CHALLENGE_POINTS,
 ): Profile {
     if (id === undefined || id === null) {
         id = GUEST_USER_ID + 1;
@@ -95,6 +102,10 @@ export function newProfile(
         stats: newStats(),
         current_chord: DEFAULT_CHORD,
         current_instrument: DEFAULT_INSTRUMENT,
+        challenge_mode: challengeMode,
+        challenge_level_index: challengeLevelIndex,
+        challenge_points: challengePoints,
+        challenge_focus_correct: DEFAULT_CHALLENGE_FOCUS_CORRECT,
     };
 }
 
@@ -109,6 +120,10 @@ export function initializeProfileDefaults(profile: Profile): void {
         enable_onboarding_hints: DEFAULT_ENABLE_ONBOARDING_HINTS,
         color_scheme: DEFAULT_COLOR_SCHEME,
         chord_selection_mode: DEFAULT_CHORD_SELECTION_MODE,
+        challenge_mode: DEFAULT_CHALLENGE_MODE,
+        challenge_level_index: DEFAULT_CHALLENGE_LEVEL_INDEX,
+        challenge_points: DEFAULT_CHALLENGE_POINTS,
+        challenge_focus_correct: DEFAULT_CHALLENGE_FOCUS_CORRECT,
     };
 
     for (const [key, defaultVal] of Object.entries(defaults)) {
@@ -156,6 +171,7 @@ export function loadState(): void {
 
     for (const profile of Object.values(state.profiles)) {
         initializeProfileDefaults(profile);
+        profile.challenge_mode = true;
     }
 
     STATE = state;

@@ -54,6 +54,14 @@ export interface Profile {
     stats: SessionStats;
     current_chord: string;
     current_instrument: string;
+    /** When true, timed challenge mode (points, timer, auto level-up) is active. */
+    challenge_mode?: boolean;
+    /** Zero-based challenge tier index. */
+    challenge_level_index?: number;
+    /** Points toward the current tier's advancement threshold. */
+    challenge_points?: number;
+    /** Correct identifications of the current tier focus chord. */
+    challenge_focus_correct?: number;
 }
 
 export interface AppState {

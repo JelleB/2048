@@ -1,17 +1,25 @@
 /**
- * Unit tests for ToneGrid v2 song state, pitch maps, sections, and micro-timing.
+ * Unit tests for ToneGrid v3 song state, pitch maps, blocks, and micro-timing.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   ToneGridSongState,
   SequencerState,
   SectionPattern,
+  SongBlock,
   buildPitchMap,
   getTonicRows,
   clampBpm,
   clampTimingOffset,
-  advanceSection,
-  DEFAULT_SONG_CHAIN,
+  advanceAfterBar,
+  collapseChainToBlocks,
+  composeBreakSection,
+  copySectionPattern,
+  ensureModulationFromVerse,
+  isSectionEmpty,
+  nextScaleRoot,
+  SECTION_DEFAULT_REPEATS,
+  DEFAULT_SONG_BLOCKS,
   NOTE_PITCH_MAP,
   SEQUENCER_CONFIG,
 } from '../src/logic/toneGrid.js';
@@ -22,6 +30,7 @@ import {
   TONEGRID_DEFAULT_BPM,
   TONEGRID_ROWS,
   TONEGRID_SCALE_ROOTS,
+  TONEGRID_SECTION_IDS,
   TONEGRID_TIMING_OFFSET_MAX,
 } from '../src/constants.js';
 
@@ -77,21 +86,103 @@ describe('SectionPattern', () => {
   });
 });
 
-describe('advanceSection', () => {
-  it('walks the chain in order', () => {
-    const chain = ['verse', 'chorus', 'break'];
-    expect(advanceSection('verse', chain, true)).toBe('chorus');
-    expect(advanceSection('chorus', chain, true)).toBe('break');
+describe('SECTION_DEFAULT_REPEATS', () => {
+  it('defines defaults for every section type', () => {
+    expect(SECTION_DEFAULT_REPEATS.verse).toBe(4);
+    expect(SECTION_DEFAULT_REPEATS.chorus).toBe(2);
+    expect(SECTION_DEFAULT_REPEATS.break).toBe(1);
+    expect(SECTION_DEFAULT_REPEATS.modulation).toBe(4);
+    expect(SECTION_DEFAULT_REPEATS.solo).toBe(4);
+    expect(SECTION_DEFAULT_REPEATS.finale).toBe(1);
+    for (const id of TONEGRID_SECTION_IDS) {
+      expect(SECTION_DEFAULT_REPEATS[id]).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('collapseChainToBlocks', () => {
+  it('merges consecutive identical sections into repeat counts', () => {
+    expect(collapseChainToBlocks(['verse', 'verse', 'chorus'])).toEqual([
+      { sectionId: 'verse', repeats: 2 },
+      { sectionId: 'chorus', repeats: 1 },
+    ]);
+  });
+});
+
+describe('nextScaleRoot', () => {
+  it('steps up one root in the scale list', () => {
+    expect(nextScaleRoot('C')).toBe('D');
+    expect(nextScaleRoot('A')).toBe('A');
+  });
+});
+
+describe('composeBreakSection', () => {
+  it('fills a sparse pattern when break is empty', () => {
+    const section = new SectionPattern();
+    composeBreakSection(section, 'C');
+    expect(isSectionEmpty(section)).toBe(false);
+    const active = section.matrix.flat().filter((v) => v === 1).length;
+    expect(active).toBeGreaterThan(0);
+    expect(active).toBeLessThan(TONEGRID_ROWS * TONEGRID_COLS);
+  });
+});
+
+describe('ensureModulationFromVerse', () => {
+  it('copies verse and raises tonic by one step', () => {
+    const state = new ToneGridSongState();
+    state.toggleCell(2, 3);
+    state.setSectionTonic('verse', 'C');
+    ensureModulationFromVerse(state);
+    expect(state.sections.modulation.matrix[2][3]).toBe(1);
+    expect(state.getSectionTonic('modulation')).toBe('D');
   });
 
-  it('loops to start when loopSong is true', () => {
-    const chain = ['verse', 'chorus'];
-    expect(advanceSection('chorus', chain, true)).toBe('verse');
+  it('does not overwrite an edited modulation', () => {
+    const state = new ToneGridSongState();
+    state.toggleCell(1, 1);
+    state.setEditSection('modulation');
+    state.toggleCell(0, 0);
+    ensureModulationFromVerse(state);
+    expect(state.sections.modulation.matrix[0][0]).toBe(1);
+    expect(state.sections.modulation.matrix[1][1]).toBe(0);
+  });
+});
+
+describe('advanceAfterBar', () => {
+  it('repeats the same section until repeat count is met', () => {
+    const blocks = [new SongBlock('verse', 2), new SongBlock('chorus', 1)];
+    expect(advanceAfterBar('verse', 0, 0, blocks, true)).toEqual({
+      playBlockIndex: 0,
+      playRepeatCount: 1,
+      playSectionId: 'verse',
+      done: false,
+    });
+    expect(advanceAfterBar('verse', 0, 1, blocks, true)).toEqual({
+      playBlockIndex: 1,
+      playRepeatCount: 0,
+      playSectionId: 'chorus',
+      done: false,
+    });
   });
 
-  it('returns null at end when loopSong is false', () => {
-    const chain = ['verse', 'chorus'];
-    expect(advanceSection('chorus', chain, false)).toBeNull();
+  it('loops to first block when loopSong is true', () => {
+    const blocks = [new SongBlock('verse', 1)];
+    expect(advanceAfterBar('verse', 0, 0, blocks, true)).toEqual({
+      playBlockIndex: 0,
+      playRepeatCount: 0,
+      playSectionId: 'verse',
+      done: false,
+    });
+  });
+
+  it('returns done at end when loopSong is false', () => {
+    const blocks = [new SongBlock('verse', 1)];
+    expect(advanceAfterBar('verse', 0, 0, blocks, false)).toEqual({
+      playBlockIndex: 0,
+      playRepeatCount: 1,
+      playSectionId: 'verse',
+      done: true,
+    });
   });
 });
 
@@ -103,22 +194,25 @@ describe('ToneGridSongState', () => {
     state = new ToneGridSongState();
   });
 
-  it('starts with six empty sections and default chain', () => {
+  it('starts with one verse block and per-section tonics', () => {
     expect(state.bpm).toBe(TONEGRID_DEFAULT_BPM);
-    expect(state.scaleRoot).toBe('C');
     expect(state.editSectionId).toBe('verse');
-    expect(state.songChain).toEqual(DEFAULT_SONG_CHAIN);
+    expect(state.songBlocks).toHaveLength(DEFAULT_SONG_BLOCKS.length);
+    expect(state.songBlocks[0].sectionId).toBe('verse');
+    expect(state.songBlocks[0].repeats).toBe(SECTION_DEFAULT_REPEATS.verse);
     expect(state.loopSong).toBe(true);
+    expect(state.getSectionTonic('verse')).toBe('C');
     for (const section of Object.values(state.sections)) {
       expect(section.matrix.every((row) => row.every((v) => v === 0))).toBe(true);
     }
   });
 
-  it('toggles cells on the edit section only', () => {
+  it('toggles cells on the edit section only and marks edited', () => {
     state.setEditSection('chorus');
     state.toggleCell(2, 3);
     expect(state.sections.chorus.matrix[2][3]).toBe(1);
     expect(state.sections.verse.matrix[2][3]).toBe(0);
+    expect(state.isSectionEdited('chorus')).toBe(true);
   });
 
   it('clears only the edit section', () => {
@@ -130,40 +224,93 @@ describe('ToneGridSongState', () => {
     expect(state.sections.verse.matrix[0][0]).toBe(1);
   });
 
-  it('advancePlaySection updates playSectionId and resets step', () => {
+  it('advancePlaySection repeats block then moves on', () => {
+    state.songBlocks = [new SongBlock('verse', 2), new SongBlock('chorus', 1)];
+    state.playBlockIndex = 0;
+    state.playRepeatCount = 0;
     state.playSectionId = 'verse';
     state.currentStep = 15;
-    const next = state.advancePlaySection();
-    expect(next).toBe('chorus');
-    expect(state.playSectionId).toBe('chorus');
-    expect(state.currentStep).toBe(0);
+
+    expect(state.advancePlaySection()).toBe('verse');
+    expect(state.playRepeatCount).toBe(1);
+    expect(state.playSectionId).toBe('verse');
+
+    expect(state.advancePlaySection()).toBe('chorus');
+    expect(state.playBlockIndex).toBe(1);
+    expect(state.playRepeatCount).toBe(0);
   });
 
-  it('appendToChain and removeFromChain', () => {
-    state.appendToChain('solo');
-    expect(state.songChain[state.songChain.length - 1]).toBe('solo');
-    while (state.songChain.length > 1) {
-      expect(state.removeFromChain(0)).toBe(true);
-    }
-    expect(state.removeFromChain(0)).toBe(false);
+  it('auto-composes break on playback when unedited', () => {
+    state.songBlocks = [new SongBlock('break', 1)];
+    state.prepareSectionForPlayback('break');
+    expect(isSectionEmpty(state.sections.break)).toBe(false);
   });
 
-  it('round-trips v2 JSON', () => {
+  it('addBlock uses default repeats and prepares modulation', () => {
+    state.toggleCell(1, 1);
+    state.addBlock('modulation');
+    expect(state.songBlocks[state.songBlocks.length - 1]).toEqual(
+      new SongBlock('modulation', SECTION_DEFAULT_REPEATS.modulation),
+    );
+    expect(state.sections.modulation.matrix[1][1]).toBe(1);
+    expect(state.getSectionTonic('modulation')).toBe('D');
+  });
+
+  it('setSectionTonic updates tonic for that section type', () => {
+    state.setSectionTonic('chorus', 'G');
+    expect(state.getSectionTonic('chorus')).toBe('G');
+    expect(state.scaleRoot).toBe('C');
+    state.setEditSection('chorus');
+    expect(state.scaleRoot).toBe('G');
+  });
+
+  it('addBlock removeBlock and setBlockRepeats', () => {
+    state.addBlock('chorus');
+    expect(state.songBlocks).toHaveLength(2);
+    expect(state.setBlockRepeats(0, 8)).toBe(8);
+    expect(state.removeBlock(1)).toBe(true);
+    expect(state.songBlocks).toHaveLength(1);
+    expect(state.removeBlock(0)).toBe(false);
+  });
+
+  it('round-trips v3 JSON', () => {
     state.toggleCell(1, 2);
     state.nudgeCellOffset(1, 2, 0.1);
     state.setBpm(140);
-    state.setScaleRoot('G');
+    state.setSectionTonic('break', 'G');
     state.setEditSection('break');
     state.loopSong = false;
+    state.addBlock('chorus');
     const json = state.toJSON();
     const restored = ToneGridSongState.fromJSON(json);
     expect(restored).not.toBeNull();
     expect(restored.bpm).toBe(140);
-    expect(restored.scaleRoot).toBe('G');
+    expect(restored.getSectionTonic('break')).toBe('G');
     expect(restored.editSectionId).toBe('break');
     expect(restored.loopSong).toBe(false);
     expect(restored.sections.verse.matrix[1][2]).toBe(1);
     expect(restored.sections.verse.offsets[1][2]).toBe(0.1);
+    expect(restored.songBlocks.length).toBeGreaterThan(1);
+  });
+
+  it('migrates v2 flat songChain into blocks', () => {
+    const restored = ToneGridSongState.fromJSON({
+      version: 2,
+      bpm: 100,
+      scaleRoot: 'F',
+      editSectionId: 'verse',
+      songChain: ['verse', 'verse', 'chorus'],
+      loopSong: true,
+      sections: Object.fromEntries(
+        TONEGRID_SECTION_IDS.map((id) => [id, { matrix: Array(16).fill(null).map(() => Array(16).fill(0)), offsets: Array(16).fill(null).map(() => Array(16).fill(0)) }]),
+      ),
+    });
+    expect(restored).not.toBeNull();
+    expect(restored.songBlocks).toEqual([
+      { sectionId: 'verse', repeats: 2 },
+      { sectionId: 'chorus', repeats: 1 },
+    ]);
+    expect(restored.getSectionTonic('verse')).toBe('F');
   });
 
   it('migrates v1 JSON into verse section', () => {

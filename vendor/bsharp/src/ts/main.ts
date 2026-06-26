@@ -2,7 +2,7 @@ import { loadState, getCurrentProfile, isRecent, STATE } from './state';
 import {
     playAudio, selectFlag, nextAudio, resetStats, changeSelector,
     onTrainerOpen, playChord, getEmojiLock, stopCurrentAudio,
-    _CORRECT_COLOR
+    _CORRECT_COLOR, dismissLevelUpCelebration, initChallengeMode,
 } from './game';
 import { initOnboarding } from './onboarding';
 import {
@@ -45,12 +45,13 @@ w.download_state = downloadState;
 w.play_chord = playChord;
 w.show_screen_pinning_info = showScreenPinningInfo;
 w.close_screen_pinning_modal = closeScreenPinningModal;
+w.dismiss_level_up = dismissLevelUpCelebration;
 w.__bsharp_correct_color = () => _CORRECT_COLOR;
 
-// Stop any playing audio when the user clicks an interactive element.
+// Stop chord preview when clicking controls, but not when answering on flags.
 document.addEventListener('click', (e) => {
     const target = e.target as Element;
-    if (target.closest('#play-button, #next-chord')) return;
+    if (target.closest('#play-button, #next-chord, .flag')) return;
     if (target.closest('[onclick], button, a, select, input')) {
         stopCurrentAudio();
     }
@@ -70,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
     populateProfileUiElements();
     setChordDisplayMode(profile.chord_display_mode);
     applyColorScheme(profile.color_scheme);
-    changeSelector(profile.current_chord);
+    initChallengeMode();
     initOnboarding();
     updateStatsDisplay();
     cleanSessionHistory();

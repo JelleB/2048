@@ -4,7 +4,6 @@
 import Phaser from 'phaser';
 import {
   ToneGridSongState,
-  buildPitchMap,
   getTonicRows,
   SECTION_LABELS,
 } from '../logic/toneGrid.js';
@@ -61,6 +60,8 @@ export class GameToneGridScene extends Phaser.Scene {
     this.nudgeDrag = null;
     /** @type {boolean} */
     this.paintMode = false;
+    /** @type {Phaser.GameObjects.Container | null} */
+    this.blockTypePicker = null;
 
     this.onSequencerStep = (event) => {
       const step = event.detail?.step;
@@ -112,6 +113,7 @@ export class GameToneGridScene extends Phaser.Scene {
     this.playheadBar = null;
     this.bpmText = null;
     this.playBtnText = null;
+    this.blockTypePicker = null;
 
     const titleSize = Math.max(16, width * 0.045);
     this.add
@@ -133,7 +135,7 @@ export class GameToneGridScene extends Phaser.Scene {
     back.on('pointerup', () => this.goToMenu());
 
     this.createSectionTabs(width, height);
-    this.createSongChainStrip(width, height);
+    this.createSongBlocksStrip(width, height);
     this.createScalePicker(width, height);
 
     this.layout = computeBoardLayout(width, height, TONEGRID_COLS, 0.38);
@@ -184,27 +186,55 @@ export class GameToneGridScene extends Phaser.Scene {
    * @param {number} width
    * @param {number} height
    */
-  createSongChainStrip(width, height) {
+  createSongBlocksStrip(width, height) {
     const y = height * 0.115;
     const chipH = Math.max(20, height * 0.025);
     const fontSize = Math.max(9, Math.floor(chipH * 0.45));
     const chipPad = 6;
     let x = width * 0.04;
 
-    this.state.songChain.forEach((id, index) => {
-      const label = SECTION_LABELS[id];
-      const chipW = Math.max(36, label.length * fontSize * 0.55 + chipPad * 2);
+    this.state.songBlocks.forEach((block, index) => {
+      const label = SECTION_LABELS[block.sectionId];
+      const repeatLabel = `×${block.repeats}`;
+      const tonic = this.state.getSectionTonic(block.sectionId);
+      const chipW = Math.max(72, (label.length + repeatLabel.length + 2) * fontSize * 0.55 + chipPad * 2 + 24);
+
+      const isPlayingBlock =
+        this.state.isPlaying
+        && this.state.playBlockIndex === index
+        && this.state.playSectionId === block.sectionId;
       const chip = this.add
-        .rectangle(x + chipW / 2, y, chipW, chipH, 0x454560)
+        .rectangle(x + chipW / 2, y, chipW, chipH, isPlayingBlock ? 0x4a8a7a : 0x454560)
         .setInteractive({ useHandCursor: true })
         .setStrokeStyle(1, 0x666680);
-      this.add
-        .text(x + chipW / 2 - 4, y, label, {
+
+      const typeText = this.add
+        .text(x + chipPad + 4, y, `${label} ▾`, {
           fontFamily: 'Arial, sans-serif',
           fontSize: `${fontSize}px`,
           color: '#f9f6f2',
         })
-        .setOrigin(0.5);
+        .setOrigin(0, 0.5)
+        .setInteractive({ useHandCursor: true });
+
+      const repeatText = this.add
+        .text(x + chipW / 2, y, repeatLabel, {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: `${fontSize}px`,
+          color: '#aaccff',
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+
+      const tonicText = this.add
+        .text(x + chipW - chipPad - 4, y, `${tonic} ▾`, {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: `${fontSize}px`,
+          color: '#ffcc88',
+        })
+        .setOrigin(1, 0.5)
+        .setInteractive({ useHandCursor: true });
+
       const removeSize = Math.max(8, fontSize * 0.75);
       const removeBtn = this.add
         .text(x + chipW - 4, y - chipH * 0.35, '×', {
@@ -214,20 +244,42 @@ export class GameToneGridScene extends Phaser.Scene {
         })
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });
+
       chip.on('pointerup', () => {
-        this.state.setEditSection(id);
+        this.state.setEditSection(block.sectionId);
+        this.syncCellColors();
         this.buildUi();
         saveToneGridPattern(this.state);
       });
+
+      typeText.on('pointerup', (pointer) => {
+        pointer.event.stopPropagation();
+        this.showBlockTypePicker(index, x + chipPad, y + chipH * 0.6, width);
+      });
+
+      repeatText.on('pointerup', (pointer) => {
+        pointer.event.stopPropagation();
+        const next = block.repeats >= 8 ? 1 : block.repeats + 1;
+        this.state.setBlockRepeats(index, next);
+        this.buildUi();
+        saveToneGridPattern(this.state);
+      });
+
+      tonicText.on('pointerup', (pointer) => {
+        pointer.event.stopPropagation();
+        this.cycleBlockTonic(block.sectionId);
+      });
+
       removeBtn.on('pointerup', (pointer) => {
         pointer.event.stopPropagation();
-        if (this.state.removeFromChain(index)) {
+        if (this.state.removeBlock(index)) {
           this.buildUi();
           saveToneGridPattern(this.state);
         }
       });
+
       x += chipW + 4;
-      if (index < this.state.songChain.length - 1) {
+      if (index < this.state.songBlocks.length - 1) {
         this.add
           .text(x, y, '→', { fontSize: `${fontSize}px`, color: '#8888a0' })
           .setOrigin(0.5);
@@ -236,18 +288,85 @@ export class GameToneGridScene extends Phaser.Scene {
     });
 
     const addBtnW = Math.max(28, height * 0.032);
-    makeButton(this, width * 0.92, y, addBtnW, chipH, fontSize, '+', () => {
-      this.state.appendToChain(this.state.editSectionId);
-      this.buildUi();
-      saveToneGridPattern(this.state);
+    makeButton(this, x + addBtnW / 2 + 4, y, addBtnW, chipH, fontSize, '+', () => {
+      this.showBlockTypePicker(-1, x, y + chipH * 0.6, width);
     });
 
     const loopLabel = this.state.loopSong ? '↻ On' : '↻ Off';
-    makeButton(this, width * 0.78, y, addBtnW + 16, chipH, fontSize, loopLabel, () => {
+    makeButton(this, width * 0.92, y, addBtnW + 16, chipH, fontSize, loopLabel, () => {
       this.state.loopSong = !this.state.loopSong;
       this.buildUi();
       saveToneGridPattern(this.state);
     });
+  }
+
+  /**
+   * Shows a dropdown row to pick section type for a block or a new block.
+   * @param {number} blockIndex -1 when adding a new block.
+   * @param {number} anchorX
+   * @param {number} anchorY
+   * @param {number} width
+   */
+  showBlockTypePicker(blockIndex, anchorX, anchorY, width) {
+    if (this.blockTypePicker) {
+      this.blockTypePicker.destroy();
+      this.blockTypePicker = null;
+    }
+
+    const chipH = Math.max(22, this.scale.height * 0.028);
+    const fontSize = Math.max(9, Math.floor(chipH * 0.42));
+    const itemW = Math.min(62, width * 0.14);
+    const container = this.add.container(0, 0).setDepth(100);
+
+    const bgW = Math.min(width * 0.92, TONEGRID_SECTION_IDS.length * (itemW + 4) + 8);
+    const bg = this.add
+      .rectangle(anchorX + bgW / 2 - itemW / 2, anchorY + chipH / 2, bgW, chipH + 8, 0x2a2a3a, 0.95)
+      .setStrokeStyle(1, 0x00ffcc);
+    container.add(bg);
+
+    let x = anchorX;
+    for (const id of TONEGRID_SECTION_IDS) {
+      const item = this.add
+        .rectangle(x + itemW / 2, anchorY + chipH / 2, itemW, chipH, 0x454560)
+        .setInteractive({ useHandCursor: true })
+        .setStrokeStyle(1, 0x666680);
+      const text = this.add
+        .text(x + itemW / 2, anchorY + chipH / 2, SECTION_LABELS[id], {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: `${fontSize}px`,
+          color: '#f9f6f2',
+        })
+        .setOrigin(0.5);
+      item.on('pointerup', () => {
+        if (blockIndex >= 0) {
+          this.state.setBlockType(blockIndex, id);
+        } else {
+          this.state.addBlock(id);
+        }
+        this.state.setEditSection(id);
+        container.destroy();
+        this.blockTypePicker = null;
+        this.buildUi();
+        saveToneGridPattern(this.state);
+      });
+      container.add([item, text]);
+      x += itemW + 4;
+    }
+
+    this.blockTypePicker = container;
+  }
+
+  /**
+   * Cycles the tonic for a section type (applies to every block of that type).
+   * @param {import('../logic/toneGrid.js').SectionId} sectionId
+   */
+  cycleBlockTonic(sectionId) {
+    const current = this.state.getSectionTonic(sectionId);
+    const idx = TONEGRID_SCALE_ROOTS.indexOf(current);
+    const next = TONEGRID_SCALE_ROOTS[(idx + 1) % TONEGRID_SCALE_ROOTS.length];
+    this.state.setSectionTonic(sectionId, next);
+    this.buildUi();
+    saveToneGridPattern(this.state);
   }
 
   /**
@@ -263,7 +382,7 @@ export class GameToneGridScene extends Phaser.Scene {
     let x = width / 2 - totalW / 2 + btnW / 2;
 
     for (const root of TONEGRID_SCALE_ROOTS) {
-      const active = this.state.scaleRoot === root;
+      const active = this.state.getSectionTonic(this.state.editSectionId) === root;
       const fill = active ? 0x00aa88 : 0x8f7a66;
       const bg = this.add
         .rectangle(x, y, btnW, btnH, fill, 12)
@@ -289,8 +408,8 @@ export class GameToneGridScene extends Phaser.Scene {
   createGrid() {
     const { offsetX, offsetY, cellSize, gap } = this.layout;
     const step = cellSize + gap;
-    const pitchMap = buildPitchMap(this.state.scaleRoot);
-    const tonicRows = getTonicRows(pitchMap, this.state.scaleRoot);
+    const pitchMap = this.state.getPitchMap();
+    const tonicRows = getTonicRows(pitchMap, this.state.getSectionTonic(this.state.editSectionId));
 
     for (let r = 0; r < TONEGRID_ROWS; r += 1) {
       this.cellVisuals[r] = [];
@@ -503,8 +622,7 @@ export class GameToneGridScene extends Phaser.Scene {
       this.audioEngine.pause();
       this.playheadBar?.setVisible(true);
     } else {
-      this.state.playSectionId = this.state.songChain[0] ?? this.state.editSectionId;
-      this.state.currentStep = 0;
+      this.state.resetPlaybackPosition();
       await this.audioEngine.start();
       this.playheadBar?.setVisible(true);
       this.syncCellColors();

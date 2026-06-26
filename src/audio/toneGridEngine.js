@@ -69,7 +69,7 @@ export class ToneGridEngine {
   handleStep(time, step) {
     this.state.currentStep = step;
     const section = this.state.getPlaySection();
-    const pitchMap = this.state.getPitchMap();
+    const pitchMap = this.state.getPlayPitchMap();
     const stepSec = Tone.Time('16n').toSeconds();
 
     for (let r = 0; r < SEQUENCER_CONFIG.rows; r += 1) {
@@ -145,8 +145,7 @@ export class ToneGridEngine {
     Tone.getTransport().stop();
     this.sequence.stop();
     this.state.isPlaying = false;
-    this.state.currentStep = 0;
-    this.state.playSectionId = this.state.editSectionId;
+    this.state.resetPlaybackPosition();
   }
 
   /**
