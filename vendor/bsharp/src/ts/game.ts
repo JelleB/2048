@@ -27,7 +27,18 @@ import {
     initGameHud, updateChallengeHud, updateChallengeTimerDisplay,
     showLevelUpOverlay, dismissLevelUpOverlay, showTimeoutPenaltyToast,
     showPointsEarnedToast, setPlayButtonReplayState,
+    updateSessionLimitDisplay, showPlayLimitOverlay, hidePlayLimitOverlay,
 } from './challengeUi';
+import {
+    createPlayLimitState,
+    resolvePlayLimit,
+    startSession,
+    sessionRemainingMs,
+    breakRemainingMs,
+    canPlay,
+    type PlayLimitState,
+    type PlayLimitPhase,
+} from './playLimit';
 
 let _COLORS: string[] | null = null;
 let _CHORDS_ON = false;
@@ -41,6 +52,8 @@ let _TRAINER_PRELOADED = false;
 let _PERSIST_REACTION_FACE_ENABLED = false;
 let _CHALLENGE_SESSION: ChallengeSessionState = createChallengeSession();
 let _CHALLENGE_TIMER_ID: ReturnType<typeof setInterval> | null = null;
+let _PLAY_LIMIT: PlayLimitState = createPlayLimitState(Date.now());
+let _PLAY_LIMIT_TIMER_ID: ReturnType<typeof setInterval> | null = null;
 let _ROUND_INSTRUMENT: ChallengeInstrument = 'piano_1';
 let _USES_CHALLENGE_SYNTH = false;
 let _autoAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -77,6 +90,108 @@ function persistChallengeSession(): void {
     profile.challenge_points = _CHALLENGE_SESSION.points;
     profile.challenge_focus_correct = _CHALLENGE_SESSION.focusChordCorrect;
     saveState();
+}
+
+function loadPlayLimitFromProfile(): void {
+    const profile = getCurrentProfile();
+    const now = Date.now();
+    _PLAY_LIMIT = {
+        dayKey: profile.play_limit_day ?? createPlayLimitState(now).dayKey,
+        sessionsCompleted: profile.play_limit_sessions_completed ?? 0,
+        sessionStartedAtMs: profile.play_limit_session_started_at ?? null,
+        breakUntilMs: profile.play_limit_break_until ?? null,
+    };
+}
+
+function persistPlayLimit(): void {
+    const profile = getCurrentProfile();
+    profile.play_limit_day = _PLAY_LIMIT.dayKey;
+    profile.play_limit_sessions_completed = _PLAY_LIMIT.sessionsCompleted;
+    profile.play_limit_session_started_at = _PLAY_LIMIT.sessionStartedAtMs;
+    profile.play_limit_break_until = _PLAY_LIMIT.breakUntilMs;
+    saveState();
+}
+
+function refreshPlayLimitUi(phase: PlayLimitPhase, nowMs: number): void {
+    updateSessionLimitDisplay(
+        sessionRemainingMs(_PLAY_LIMIT, nowMs),
+        _PLAY_LIMIT.sessionsCompleted,
+        phase,
+    );
+    if (phase === 'on_break') {
+        showPlayLimitOverlay(phase, breakRemainingMs(_PLAY_LIMIT, nowMs));
+    } else if (phase === 'daily_done') {
+        showPlayLimitOverlay(phase);
+    } else {
+        hidePlayLimitOverlay();
+    }
+}
+
+function stopPlayLimitTimer(): void {
+    if (_PLAY_LIMIT_TIMER_ID !== null) {
+        clearInterval(_PLAY_LIMIT_TIMER_ID);
+        _PLAY_LIMIT_TIMER_ID = null;
+    }
+}
+
+function lockOutPlay(): void {
+    stopChallengeTimer();
+    cancelAutoAdvance();
+    stopCurrentAudio();
+    setPlayButtonReplayState(false);
+}
+
+/**
+ * Resolves day rollover and session expiry, auto-starts when available, updates HUD/overlay.
+ * @param options.resumePlay - When true and a new session just became available, auto-play a chord
+ * @returns Whether the player may interact right now
+ */
+function syncPlayLimit(options: { resumePlay?: boolean } = {}): boolean {
+    const nowMs = Date.now();
+    const wasInSession = _PLAY_LIMIT.sessionStartedAtMs != null
+        && sessionRemainingMs(_PLAY_LIMIT, nowMs) > 0;
+    const wasAvailableOrBreak = !wasInSession;
+
+    const before = { ..._PLAY_LIMIT };
+    let resolved = resolvePlayLimit(_PLAY_LIMIT, nowMs);
+    _PLAY_LIMIT = resolved.state;
+    let phase = resolved.phase;
+
+    if (phase === 'available') {
+        _PLAY_LIMIT = startSession(_PLAY_LIMIT, nowMs);
+        phase = 'in_session';
+    }
+
+    const changed = before.dayKey !== _PLAY_LIMIT.dayKey
+        || before.sessionsCompleted !== _PLAY_LIMIT.sessionsCompleted
+        || before.sessionStartedAtMs !== _PLAY_LIMIT.sessionStartedAtMs
+        || before.breakUntilMs !== _PLAY_LIMIT.breakUntilMs;
+    if (changed) persistPlayLimit();
+
+    refreshPlayLimitUi(phase, nowMs);
+
+    const allowed = canPlay(_PLAY_LIMIT, nowMs);
+    if (!allowed) {
+        lockOutPlay();
+    } else if (
+        options.resumePlay
+        && wasAvailableOrBreak
+        && phase === 'in_session'
+        && before.sessionStartedAtMs !== _PLAY_LIMIT.sessionStartedAtMs
+    ) {
+        populateAudio();
+        playAudio();
+    }
+
+    return allowed;
+}
+
+/** Starts the wall-clock ticker for session / break countdowns. */
+function startPlayLimitTimer(): void {
+    stopPlayLimitTimer();
+    _PLAY_LIMIT_TIMER_ID = setInterval(() => {
+        syncPlayLimit({ resumePlay: true });
+    }, 250);
 }
 
 export function getSelectedColors(): string[] {
@@ -146,6 +261,7 @@ function cancelAutoAdvance(): void {
 /** Loads the next question and auto-plays the chord (challenge flow). */
 function advanceToNextRound(): void {
     if (_CHALLENGE_SESSION.phase === 'level_up_pause') return;
+    if (!syncPlayLimit()) return;
 
     cancelAutoAdvance();
     dismissOnboardingStep('goNext');
@@ -247,6 +363,7 @@ export function populateAudio(): void {
 export function playAudio(): void {
     const playButton = document.getElementById('play-button');
     if (playButton && playButton.classList.contains('deactivated')) return;
+    if (!canPlay(_PLAY_LIMIT, Date.now())) return;
 
     if (_CHALLENGE_SESSION.phase === 'level_up_pause') return;
     const config = getLevelConfig(_CHALLENGE_SESSION.levelIndex);
@@ -273,6 +390,7 @@ export function playAudio(): void {
 export function selectFlag(elem: HTMLElement): void {
     if (_SELECTED_ELEM !== null) return;
     if (!_AUDIO_PLAYED) return;
+    if (!canPlay(_PLAY_LIMIT, Date.now())) return;
     if (_CHALLENGE_SESSION.phase === 'level_up_pause') return;
     if (_CHALLENGE_SESSION.phase !== 'playing') return;
 
@@ -374,6 +492,7 @@ export function resetStats(done = true): void {
 
     saveState();
     updateStatsDisplay();
+    if (!syncPlayLimit()) return;
     populateAudio();
     playAudio();
 }
@@ -400,9 +519,10 @@ export function getEmojiLock(): boolean {
     return _EMOJI_LOCK;
 }
 
-/** Boots the challenge game: flags, HUD, first chord auto-plays. */
+/** Boots the challenge game: flags, HUD, first chord auto-plays when allowed. */
 export function initChallengeMode(): void {
     loadChallengeSessionFromProfile();
+    loadPlayLimitFromProfile();
     initGameHud();
 
     const currentProfile = getCurrentProfile();
@@ -415,6 +535,10 @@ export function initChallengeMode(): void {
     }
 
     updateChallengeHud(_CHALLENGE_SESSION);
+    const allowed = syncPlayLimit();
+    startPlayLimitTimer();
+    if (!allowed) return;
+
     populateAudio();
     playAudio();
 }

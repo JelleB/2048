@@ -8,6 +8,11 @@ import {
     getFocusChordDisplayForLevel,
 } from './challenge';
 import { CHORD_DEFINITIONS } from './data';
+import {
+    PLAY_MAX_SESSIONS_PER_DAY,
+    formatCountdown,
+    type PlayLimitPhase,
+} from './playLimit';
 
 /**
  * Shows challenge HUD; hides manual level selector and next-arrow (auto-progress only).
@@ -55,7 +60,7 @@ export function updateChallengeHud(session: ChallengeSessionState): void {
 }
 
 /**
- * Updates the countdown timer display.
+ * Updates the per-question countdown timer display.
  * @param secondsLeft - Whole seconds remaining
  */
 export function updateChallengeTimerDisplay(secondsLeft: number): void {
@@ -64,6 +69,78 @@ export function updateChallengeTimerDisplay(secondsLeft: number): void {
     timerEl.textContent = String(secondsLeft);
     timerEl.classList.toggle('urgent', secondsLeft > 0 && secondsLeft <= 3);
     timerEl.classList.toggle('expired', secondsLeft === 0);
+}
+
+/**
+ * Updates the visible play-session countdown and sessions remaining today.
+ * @param remainingMs - Milliseconds left in the current play session
+ * @param sessionsCompleted - Finished sessions today
+ * @param phase - Current play-limit phase
+ */
+export function updateSessionLimitDisplay(
+    remainingMs: number,
+    sessionsCompleted: number,
+    phase: PlayLimitPhase,
+): void {
+    const timerEl = document.getElementById('session-timer');
+    const leftEl = document.getElementById('session-left');
+    const sessionsLeft = Math.max(0, PLAY_MAX_SESSIONS_PER_DAY - sessionsCompleted);
+    if (timerEl) {
+        timerEl.textContent = phase === 'in_session' ? formatCountdown(remainingMs) : '0:00';
+        timerEl.classList.toggle('urgent', phase === 'in_session' && remainingMs <= 60_000);
+    }
+    if (leftEl) {
+        leftEl.textContent = sessionsLeft === 1 ? '1 left today' : `${sessionsLeft} left today`;
+    }
+}
+
+/**
+ * Shows the lockout overlay for break or daily limit.
+ * @param phase - `on_break` or `daily_done`
+ * @param remainingMs - Break time remaining (ignored for daily_done)
+ */
+export function showPlayLimitOverlay(phase: PlayLimitPhase, remainingMs = 0): void {
+    const overlay = document.getElementById('play-limit-overlay');
+    const title = document.getElementById('play-limit-title');
+    const detail = document.getElementById('play-limit-detail');
+    const countdown = document.getElementById('play-limit-countdown');
+    if (!overlay) return;
+
+    if (phase === 'on_break') {
+        if (title) title.textContent = 'Break time';
+        if (detail) {
+            detail.textContent = 'Take a 10-minute break before your next session.';
+        }
+        if (countdown) {
+            countdown.textContent = formatCountdown(remainingMs);
+            countdown.hidden = false;
+        }
+    } else if (phase === 'daily_done') {
+        if (title) title.textContent = 'Done for today';
+        if (detail) {
+            detail.textContent = `You used all ${PLAY_MAX_SESSIONS_PER_DAY} sessions. Come back tomorrow.`;
+        }
+        if (countdown) {
+            countdown.textContent = '';
+            countdown.hidden = true;
+        }
+    } else {
+        hidePlayLimitOverlay();
+        return;
+    }
+
+    overlay.classList.add('visible');
+    overlay.setAttribute('aria-hidden', 'false');
+}
+
+/**
+ * Hides the play-limit lockout overlay.
+ */
+export function hidePlayLimitOverlay(): void {
+    const overlay = document.getElementById('play-limit-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('visible');
+    overlay.setAttribute('aria-hidden', 'true');
 }
 
 /**
@@ -128,12 +205,12 @@ export function showPointsEarnedToast(points: number): void {
 
 /**
  * Updates play button state when replays are exhausted.
- * @param canPlay - Whether another replay is allowed
+ * @param canReplayMore - Whether another replay is allowed
  */
-export function setPlayButtonReplayState(canPlay: boolean): void {
+export function setPlayButtonReplayState(canReplayMore: boolean): void {
     const playButton = document.getElementById('play-button');
     if (!playButton) return;
-    if (canPlay) {
+    if (canReplayMore) {
         playButton.classList.remove('deactivated');
     } else {
         playButton.classList.add('deactivated');

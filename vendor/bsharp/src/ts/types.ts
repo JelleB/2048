@@ -62,6 +62,14 @@ export interface Profile {
     challenge_points?: number;
     /** Correct identifications of the current tier focus chord. */
     challenge_focus_correct?: number;
+    /** Local calendar day (`YYYY-MM-DD`) for play-limit counters. */
+    play_limit_day?: string;
+    /** Finished play sessions on `play_limit_day`. */
+    play_limit_sessions_completed?: number;
+    /** Wall-clock ms when the active play session started, if any. */
+    play_limit_session_started_at?: number | null;
+    /** Wall-clock ms when the mandatory break ends, if any. */
+    play_limit_break_until?: number | null;
 }
 
 export interface AppState {

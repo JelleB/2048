@@ -941,6 +941,25 @@ div.lightpurple {
     opacity: 0.92;
 }
 
+.challenge-session-row {
+    font-size: 0.9rem;
+    gap: 0.75rem;
+}
+
+.challenge-session-timer {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    min-width: 3.25rem;
+}
+
+.challenge-session-timer.urgent {
+    color: #e85d04;
+}
+
+.challenge-session-left {
+    opacity: 0.85;
+}
+
 .challenge-timer {
     display: inline-flex;
     align-items: center;
@@ -1021,6 +1040,21 @@ a#next-chord.challenge-hidden {
 
 .level-up-overlay {
     z-index: 250;
+}
+
+.play-limit-overlay {
+    z-index: 260;
+}
+
+.play-limit-content {
+    text-align: center;
+}
+
+.play-limit-countdown {
+    font-size: 2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    margin: 0.75rem 0 0;
 }
 
 .level-up-content {

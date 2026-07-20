@@ -27,6 +27,7 @@ export const DEFAULT_CHALLENGE_MODE = true;
 export const DEFAULT_CHALLENGE_LEVEL_INDEX = 0;
 export const DEFAULT_CHALLENGE_POINTS = 0;
 export const DEFAULT_CHALLENGE_FOCUS_CORRECT = 0;
+export const DEFAULT_PLAY_LIMIT_SESSIONS_COMPLETED = 0;
 
 export let STATE: AppState = null!;
 export let _SESSION_HISTORY: Record<string, Record<string, SessionStats[]>> | null = null;
@@ -106,6 +107,10 @@ export function newProfile(
         challenge_level_index: challengeLevelIndex,
         challenge_points: challengePoints,
         challenge_focus_correct: DEFAULT_CHALLENGE_FOCUS_CORRECT,
+        play_limit_day: undefined,
+        play_limit_sessions_completed: DEFAULT_PLAY_LIMIT_SESSIONS_COMPLETED,
+        play_limit_session_started_at: null,
+        play_limit_break_until: null,
     };
 }
 
@@ -124,6 +129,9 @@ export function initializeProfileDefaults(profile: Profile): void {
         challenge_level_index: DEFAULT_CHALLENGE_LEVEL_INDEX,
         challenge_points: DEFAULT_CHALLENGE_POINTS,
         challenge_focus_correct: DEFAULT_CHALLENGE_FOCUS_CORRECT,
+        play_limit_sessions_completed: DEFAULT_PLAY_LIMIT_SESSIONS_COMPLETED,
+        play_limit_session_started_at: null,
+        play_limit_break_until: null,
     };
 
     for (const [key, defaultVal] of Object.entries(defaults)) {

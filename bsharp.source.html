@@ -250,6 +250,11 @@
                 <div class="challenge-hud-row challenge-focus-row">
                     <span class="challenge-focus"><span id="challenge-focus-name">Yellow</span>: <span id="challenge-focus-count">0</span> / <span id="challenge-focus-goal">6</span></span>
                 </div>
+                <div class="challenge-hud-row challenge-session-row">
+                    <span class="challenge-session-label">Session</span>
+                    <span class="challenge-session-timer" id="session-timer" role="timer" aria-live="polite">10:00</span>
+                    <span class="challenge-session-left" id="session-left">3 left today</span>
+                </div>
             </div>
             <div id="challenge-toast" class="challenge-toast" aria-live="polite"></div>
             <div class="control-container">
@@ -545,6 +550,13 @@
                 <h2 id="level-up-title">Level up!</h2>
                 <p id="level-up-detail"></p>
                 <button class="button" type="button" onclick="dismiss_level_up()">Continue</button>
+            </div>
+        </div>
+        <div class="modal-overlay play-limit-overlay" id="play-limit-overlay" aria-hidden="true" role="dialog" aria-labelledby="play-limit-title">
+            <div class="modal-content play-limit-content">
+                <h2 id="play-limit-title">Break time</h2>
+                <p id="play-limit-detail">Take a short rest before the next session.</p>
+                <p class="play-limit-countdown" id="play-limit-countdown" role="timer" aria-live="polite">10:00</p>
             </div>
         </div>
         <div class="modal-overlay" id="screen-pinning-modal">
