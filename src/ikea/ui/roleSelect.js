@@ -26,6 +26,18 @@ import { wobbleElement } from './feedback.js';
  */
 
 /**
+ * Returns which role-select panels should be visible.
+ * @param {'p1'|'p2'|'daughter'} role
+ * @returns {{ showP1: boolean, showJoin: boolean }}
+ */
+export function rolePanelVisibility(role) {
+  return {
+    showP1: role === 'p1',
+    showJoin: role === 'p2' || role === 'daughter',
+  };
+}
+
+/**
  * Renders role selection screen.
  * @param {HTMLElement} main
  * @param {SessionStartFn} onStart
@@ -39,14 +51,13 @@ export function renderRoleSelect(main, onStart) {
   main.innerHTML = `
     <section class="ikea-role-select">
       <p class="ikea-intro">Kies wie je bent. Monique start de sessie; Jelle en Meike joinen met de code.</p>
-      <p class="ikea-intro ikea-intro--hint">Level 1 is een <strong>Nederlands kruiswoord</strong>: Monique vult het raster in en roept magazijnlocaties; Jelle &amp; Meike zoeken de omschrijving op. Daarna verschijnt een 4CODE.</p>
       <div class="ikea-role-form">
         <label class="ikea-field-label" for="ikea-player-select">Speler</label>
         <select id="ikea-player-select" class="ikea-input ikea-player-select">
           ${options}
         </select>
 
-        <div class="ikea-role-panel ikea-role-panel--p1">
+        <div class="ikea-role-panel ikea-role-panel--p1 is-visible">
           <div class="ikea-sprite ikea-sprite--p1" aria-hidden="true"></div>
           <h2 class="ikea-role-panel-title">${playerSelectLabel(getPlayerByRole('p1'))}</h2>
           <p>${getPlayerByRole('p1').description}</p>
@@ -59,7 +70,7 @@ export function renderRoleSelect(main, onStart) {
           </div>
         </div>
 
-        <div class="ikea-role-panel ikea-role-panel--join" hidden>
+        <div class="ikea-role-panel ikea-role-panel--join">
           <div class="ikea-sprite ikea-join-sprite" aria-hidden="true"></div>
           <h2 class="ikea-role-panel-title ikea-join-title"></h2>
           <p class="ikea-join-description"></p>
@@ -108,16 +119,16 @@ export function renderRoleSelect(main, onStart) {
 
   function updatePanels() {
     const role = selectedRole();
-    const isP1 = role === 'p1';
+    const { showP1, showJoin } = rolePanelVisibility(role);
 
     if (p1Panel instanceof HTMLElement) {
-      p1Panel.hidden = !isP1;
+      p1Panel.classList.toggle('is-visible', showP1);
     }
     if (joinPanel instanceof HTMLElement) {
-      joinPanel.hidden = isP1;
+      joinPanel.classList.toggle('is-visible', showJoin);
     }
 
-    if (!isP1) {
+    if (showJoin) {
       const player = getPlayerByRole(role);
       if (joinSprite instanceof HTMLElement) {
         joinSprite.className = `ikea-sprite ikea-sprite--${player.role} ikea-join-sprite`;
@@ -213,7 +224,7 @@ export function renderRoleSelect(main, onStart) {
     if (!validateSessionJoin(code)) {
       playError();
       if (joinInput instanceof HTMLElement) wobbleElement(joinInput);
-      showToast('Ongeldige sessiecode. Controleer de laatste twee tekens.');
+      showToast('Ongeldige code.');
       return;
     }
 

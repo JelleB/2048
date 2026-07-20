@@ -10,6 +10,8 @@
   --ikea-green: #4caf50;
   --gold: #c9a227;
   --sprite-url: url('/ikea/spritesheet.png');
+  --font-8bit-body: 'VT323', monospace;
+  --font-8bit-display: 'Press Start 2P', monospace;
 }
 
 *,
@@ -22,9 +24,38 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: var(--font-8bit-body);
+  font-size: 1.25rem;
+  line-height: 1.35;
   background: var(--warm-white);
   color: var(--charcoal);
+}
+
+.ikea-app,
+.ikea-app input,
+.ikea-app select,
+.ikea-app textarea,
+.ikea-app button {
+  font-family: inherit;
+}
+
+.ikea-app h1,
+.ikea-app h2,
+.ikea-app h3,
+.ikea-btn,
+.ikea-header-btn,
+.ikea-mono,
+.ikea-label,
+.ikea-session-code-value,
+.ikea-role-badge,
+.ikea-level-badge,
+.ikea-seed-badge,
+.ikea-chord-btn,
+.ikea-crossword-letter,
+.ikea-sync-code-value,
+.ikea-victory-title {
+  font-family: var(--font-8bit-display);
+  font-weight: 400;
 }
 
 .ikea-app {
@@ -54,12 +85,11 @@ body {
   background: transparent;
   border: 2px solid var(--ikea-yellow);
   border-radius: 4px;
-  padding: 0.35rem 0.65rem;
-  font-weight: 600;
-  font-size: 0.85rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.5rem;
+  line-height: 1.6;
   cursor: pointer;
   text-decoration: none;
-  font-family: inherit;
   min-height: 36px;
 }
 
@@ -80,8 +110,8 @@ body {
 .ikea-title {
   margin: 0;
   text-align: center;
-  font-size: clamp(1.1rem, 4vw, 1.6rem);
-  font-family: 'Courier New', Courier, monospace;
+  font-size: clamp(0.5rem, 2.6vw, 0.72rem);
+  line-height: 1.85;
 }
 
 .ikea-main {
@@ -98,13 +128,13 @@ body {
 }
 
 .ikea-label {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.85rem;
+  font-size: 0.55rem;
+  line-height: 1.6;
   margin: 0 0 0.5rem;
 }
 
 .ikea-mono {
-  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 0.04em;
 }
 
 .ikea-intro {
@@ -122,12 +152,12 @@ body {
 /* Buttons */
 .ikea-btn {
   min-height: 44px;
-  padding: 0.55rem 1rem;
+  padding: 0.65rem 0.85rem;
   border: 3px solid var(--charcoal);
   background: #fff;
-  font-weight: 700;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.58rem;
+  line-height: 1.55;
   touch-action: manipulation;
 }
 
@@ -154,8 +184,8 @@ body {
   background: #fff;
   color: #a33;
   border: 2px dashed #a33;
-  font-size: 0.82rem;
-  padding: 0.35rem 0.55rem;
+  font-size: 0.5rem;
+  padding: 0.45rem 0.55rem;
 }
 
 .ikea-debug-bar {
@@ -196,7 +226,7 @@ body {
   min-height: 44px;
   border: 2px solid var(--charcoal);
   padding: 0.45rem 0.65rem;
-  font-size: 1rem;
+  font-size: 1.25rem;
   width: 100%;
   max-width: 280px;
 }
@@ -211,8 +241,8 @@ body {
 }
 
 .ikea-field-label {
-  font-weight: 700;
-  font-size: 0.9rem;
+  font-weight: 400;
+  font-size: 1.15rem;
 }
 
 .ikea-player-select {
@@ -223,14 +253,19 @@ body {
   border: 3px solid var(--charcoal);
   padding: 1rem;
   background: #fff;
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 0.5rem;
 }
 
+.ikea-role-panel.is-visible {
+  display: flex;
+}
+
 .ikea-role-panel-title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 0.58rem;
+  line-height: 1.65;
   color: var(--ikea-blue);
 }
 
@@ -266,9 +301,9 @@ body {
 }
 
 .ikea-session-code-value {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 1.75rem;
-  letter-spacing: 0.2em;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  letter-spacing: 0.12em;
   text-align: center;
   color: var(--ikea-blue);
   margin: 0.5rem 0;
@@ -311,15 +346,16 @@ body {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 1rem;
-  font-size: 0.85rem;
 }
 
 .ikea-role-badge,
 .ikea-level-badge,
 .ikea-seed-badge {
   border: 2px solid var(--charcoal);
-  padding: 0.25rem 0.5rem;
+  padding: 0.35rem 0.5rem;
   background: #fff;
+  font-size: 0.48rem;
+  line-height: 1.55;
 }
 
 .ikea-role-badge {
@@ -330,6 +366,8 @@ body {
 .ikea-level-title {
   margin: 0 0 0.75rem;
   color: var(--ikea-blue);
+  font-size: 0.72rem;
+  line-height: 1.7;
 }
 
 /* Level 1 crossword board */
@@ -371,7 +409,7 @@ body {
   font-weight: 700;
   line-height: 1;
   color: var(--charcoal);
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-8bit-display);
 }
 
 .ikea-crossword-cell__letter {
@@ -381,7 +419,7 @@ body {
   width: 100%;
   height: 100%;
   font-weight: 700;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-8bit-display);
   font-size: 0.85rem;
 }
 
@@ -401,7 +439,7 @@ body {
   background: transparent;
   text-align: center;
   font-weight: 700;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-8bit-display);
   font-size: 0.85rem;
   text-transform: uppercase;
   padding-top: 0.55rem;
@@ -434,7 +472,7 @@ body {
 }
 
 .ikea-crossword-location {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-8bit-display);
   font-weight: 700;
   color: var(--ikea-blue);
   letter-spacing: 0.04em;
@@ -456,7 +494,7 @@ body {
 
 .ikea-warehouse-code {
   margin: 0;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-8bit-display);
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--ikea-blue);
@@ -493,7 +531,7 @@ body {
   padding: 0.65rem 0.85rem;
   border: 3px solid var(--ikea-yellow);
   background: #fffbe6;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-8bit-display);
   font-size: 1.75rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -700,7 +738,7 @@ body {
   padding: 1rem;
   max-width: 320px;
   background: #fff;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-8bit-display);
 }
 
 .ikea-receipt-header {
@@ -763,7 +801,7 @@ body {
 }
 
 .ikea-blues-bar-chords {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-8bit-display);
   letter-spacing: 0.04em;
 }
 
@@ -787,9 +825,7 @@ body {
 }
 
 .ikea-chord-btn {
-  font-size: 1.35rem;
-  font-weight: 800;
-  font-family: 'Times New Roman', Times, serif;
+  font-size: 0.95rem;
   min-height: 3.25rem;
 }
 
@@ -866,7 +902,7 @@ body {
   margin: 0 0 0.35rem;
   font-weight: 800;
   color: var(--ikea-blue);
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-8bit-display);
   font-size: 0.95rem;
 }
 
@@ -894,7 +930,7 @@ body {
   letter-spacing: 0.25em;
   text-align: center;
   color: var(--ikea-blue);
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-8bit-display);
 }
 
 .ikea-sync-bar {
@@ -950,13 +986,15 @@ body {
 .ikea-certificate h2 {
   margin: 0 0 1rem;
   color: var(--ikea-blue);
+  font-size: 0.62rem;
+  line-height: 1.75;
 }
 
 .ikea-cert-names {
   list-style: none;
   padding: 0;
   margin: 1rem 0;
-  font-size: 1.1rem;
+  font-size: 1.35rem;
 }
 
 .ikea-cert-names li {
@@ -966,9 +1004,10 @@ body {
 .ikea-cert-ribbon {
   background: var(--ikea-blue);
   color: var(--ikea-yellow);
-  font-weight: 800;
-  font-size: 1.4rem;
-  padding: 0.6rem;
+  font-family: var(--font-8bit-display);
+  font-size: 0.72rem;
+  line-height: 1.6;
+  padding: 0.75rem 0.6rem;
   margin-top: 1rem;
 }
 
@@ -980,8 +1019,10 @@ body {
   transform: translateX(-50%) translateY(-120%);
   background: var(--ikea-yellow);
   border: 3px solid var(--charcoal);
-  padding: 0.75rem 1.25rem;
-  font-weight: 800;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-8bit-display);
+  font-size: 0.52rem;
+  line-height: 1.55;
   z-index: 1000;
   transition: transform 0.3s ease;
 }
