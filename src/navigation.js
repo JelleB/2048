@@ -20,6 +20,14 @@ export function navigateToBSharp() {
 }
 
 /**
+ * Navigate to the Lost in IKEA co-op escape room (non-Phaser HTML app).
+ */
+export function navigateToIkea() {
+  const page = import.meta.env.DEV ? 'ikea.source.html' : 'ikea.html';
+  window.location.assign(`${appBaseUrl()}${page}`);
+}
+
+/**
  * URL for returning to the Phaser games menu from a standalone page.
  * @returns {string}
  */

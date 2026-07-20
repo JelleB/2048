@@ -4,7 +4,7 @@
 import Phaser from 'phaser';
 import { makeButton } from '../ui/buttons.js';
 import { getHighScore } from '../persistence/gameStorage.js';
-import { navigateToBSharp } from '../navigation.js';
+import { navigateToBSharp, navigateToIkea } from '../navigation.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -36,17 +36,20 @@ export class MenuScene extends Phaser.Scene {
     makeButton(this, width / 2, height * 0.32, btnW, btnH, fontSize, 'Play 2048', () => {
       this.scene.start('Game2048');
     });
-    makeButton(this, width / 2, height * 0.40, btnW, btnH, fontSize, 'Play 2248', () => {
+    makeButton(this, width / 2, height * 0.39, btnW, btnH, fontSize, 'Play 2248', () => {
       this.scene.start('Game2248');
     });
-    makeButton(this, width / 2, height * 0.48, btnW, btnH, fontSize, 'Play Knoppenspel', () => {
+    makeButton(this, width / 2, height * 0.46, btnW, btnH, fontSize, 'Play Knoppenspel', () => {
       this.scene.start('GameKnoppenspel');
     });
-    makeButton(this, width / 2, height * 0.56, btnW, btnH, fontSize, 'Play ToneGrid', () => {
+    makeButton(this, width / 2, height * 0.53, btnW, btnH, fontSize, 'Play ToneGrid', () => {
       this.scene.start('GameToneGrid');
     });
-    makeButton(this, width / 2, height * 0.64, btnW, btnH, fontSize, 'Play BSharp', () => {
+    makeButton(this, width / 2, height * 0.60, btnW, btnH, fontSize, 'Play BSharp', () => {
       navigateToBSharp();
+    });
+    makeButton(this, width / 2, height * 0.67, btnW, btnH, fontSize, 'Lost in IKEA', () => {
+      navigateToIkea();
     });
 
     const hintSize = Math.max(11, width * 0.028);
@@ -66,7 +69,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height * 0.90, 'Swipe (2048) · Drag (2248) · LEDs (Knoppenspel) · Grid (ToneGrid) · Chords (BSharp)', {
+      .text(width / 2, height * 0.90, 'Swipe · Drag · LEDs · Grid · Chords · IKEA co-op escape', {
         fontFamily: 'Arial, sans-serif',
         fontSize: `${Math.max(11, width * 0.03)}px`,
         color: '#a8a8c0',
