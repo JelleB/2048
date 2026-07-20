@@ -14,6 +14,7 @@ import {
   savePendingP1Session,
   clearPendingP1Session,
   validateSessionJoin,
+  SESSION_CODE_LENGTH,
 } from '../logic/session.js';
 import { playClick, playError, initAudio } from '../audio/ikeaSynth.js';
 import { wobbleElement } from './feedback.js';
@@ -67,8 +68,8 @@ export function renderRoleSelect(main, onStart) {
             id="ikea-join-code"
             type="text"
             class="ikea-input ikea-join-input"
-            placeholder="Sessiecode"
-            maxlength="8"
+            placeholder="Bijv. ABCD42"
+            maxlength="${SESSION_CODE_LENGTH}"
             autocapitalize="characters"
           />
           <button type="button" class="ikea-btn ikea-btn--yellow ikea-join-btn">Join sessie</button>
@@ -212,6 +213,7 @@ export function renderRoleSelect(main, onStart) {
     if (!validateSessionJoin(code)) {
       playError();
       if (joinInput instanceof HTMLElement) wobbleElement(joinInput);
+      showToast('Ongeldige sessiecode. Controleer de laatste twee tekens.');
       return;
     }
 

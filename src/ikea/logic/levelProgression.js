@@ -5,7 +5,7 @@
 /** @type {3} Internal session level that is skipped in gameplay. */
 export const DISABLED_CAFETERIA_LEVEL = 3;
 
-/** @type {4} Internal session level for the Allen key puzzle. */
+/** @type {4} Internal session level for the blues chord puzzle. */
 export const ALLEN_KEY_LEVEL = 4;
 
 /** @type {5} Internal session level for victory screen. */
@@ -17,7 +17,7 @@ export const PLAYABLE_LEVELS = [1, 2, ALLEN_KEY_LEVEL];
 const DISPLAY_TITLES = {
   1: 'Lager-Korsord',
   2: 'Rum-Labyrint',
-  [ALLEN_KEY_LEVEL]: 'Unbrakonyckel',
+  [ALLEN_KEY_LEVEL]: 'Blues-schema',
 };
 
 /**

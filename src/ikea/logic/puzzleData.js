@@ -2,63 +2,186 @@
  * Static puzzle content for all four IKEA escape room levels.
  */
 
-/** Showroom maze room graph. */
+/** Showroom maze room graph — IKEA afdelingen with optional korte routes. */
 export const MAZE_ROOMS = {
   entrance: {
-    label: 'Entrance',
-    safeExits: { east: 'livingRoom' },
-    traps: {},
+    label: 'Ingang',
+    safeExits: { east: 'huiskamers' },
+    traps: {
+      north: 'Personeelsingang — geen toegang.',
+      south: 'Roltrap naar het restaurant — doodlopend.',
+      west: 'Parkeergarage — te koud om terug.',
+    },
+    blueprint: { x: 0, y: 0 },
+  },
+  huiskamers: {
+    label: 'Huiskamers',
+    safeExits: { west: 'entrance', east: 'slaapkamers' },
+    traps: {
+      north: 'Woonkamer-display achter glas — afgesloten.',
+      south: 'Eetkamer-pop-up — alleen voor personeel.',
+    },
+    lockedDoors: ['north'],
+    blueprint: { x: 1, y: 0 },
+  },
+  slaapkamers: {
+    label: 'Slaapkamers',
+    safeExits: { west: 'huiskamers', east: 'kinderkamers', south: 'keukens' },
+    traps: { north: 'Matrasafdeling — te zacht, je blijft hangen.' },
+    shortcuts: ['south'],
+    blueprint: { x: 2, y: 0 },
+  },
+  kinderkamers: {
+    label: 'Kinderkamers',
+    safeExits: { west: 'slaapkamers', east: 'kantoor' },
+    traps: {
+      north: 'Småland ouders — geen doorgang.',
+      south: 'Ballenbak — val in!',
+    },
+    blueprint: { x: 3, y: 0 },
+  },
+  kantoor: {
+    label: 'Kantoor',
+    safeExits: { west: 'kinderkamers', south: 'badkamers' },
+    traps: {
+      north: 'Printerruimte — papierstoring.',
+      east: 'IKEA Family balie — wachtrij val.',
+    },
+    blueprint: { x: 4, y: 0 },
+  },
+  badkamers: {
+    label: 'Badkamers',
+    safeExits: { north: 'kantoor', west: 'keukens' },
+    traps: {
+      south: 'Demo-douche — alles nat.',
+      east: 'Showroom-toilet — bezet.',
+    },
+    blueprint: { x: 4, y: 1 },
+  },
+  keukens: {
+    label: 'Keukens',
+    safeExits: { east: 'badkamers', west: 'pannen', north: 'slaapkamers' },
+    traps: { south: 'Keuken-eiland montage — schroeven overal.' },
+    shortcuts: ['north'],
+    blueprint: { x: 3, y: 1 },
+  },
+  pannen: {
+    label: 'Pannen',
+    safeExits: { east: 'keukens', west: 'servies' },
+    traps: {
+      north: 'Messenset display — scherp!',
+      south: 'Grillhoek — te heet.',
+    },
+    blueprint: { x: 2, y: 1 },
+  },
+  servies: {
+    label: 'Servies',
+    safeExits: { east: 'pannen', west: 'martelwerktuigen', south: 'magazijn2' },
+    traps: { north: 'Glazen rek — alles kapot.' },
+    shortcuts: ['south'],
+    blueprint: { x: 1, y: 1 },
+  },
+  martelwerktuigen: {
+    label: 'Martelwerktuigen',
+    safeExits: { east: 'servies', south: 'planten' },
+    traps: {
+      north: 'ALLEMÄHNER rek — instabiel.',
+      west: 'Retourhoek — je raakt kwijt.',
+    },
     blueprint: { x: 0, y: 1 },
   },
-  livingRoom: {
-    label: 'Living Room',
-    safeExits: { east: 'kitchen' },
-    traps: { north: 'Locked showroom trap!' },
-    blueprint: { x: 1, y: 1 },
-    lockedDoors: ['north'],
+  planten: {
+    label: 'Planten',
+    safeExits: { north: 'martelwerktuigen', east: 'magazijn1' },
+    traps: {
+      south: 'Kweekkas — te vochtig.',
+      west: 'Tuinmeubelen buiten — deur dicht.',
+    },
+    blueprint: { x: 0, y: 2 },
   },
-  kitchen: {
-    label: 'Kitchen',
-    safeExits: { south: 'bedroom' },
-    traps: { west: 'Warehouse dead-end!' },
-    blueprint: { x: 2, y: 1 },
-    lockedDoors: ['west'],
+  magazijn1: {
+    label: 'Magazijn (1)',
+    safeExits: { west: 'planten', east: 'magazijn2' },
+    traps: {
+      north: 'Heftruck route — gevaarlijk.',
+      south: 'Palletstapel — omgevallen.',
+    },
+    blueprint: { x: 1, y: 2 },
   },
-  bedroom: {
-    label: 'Bedroom',
-    safeExits: { east: 'lighting' },
-    traps: {},
+  magazijn2: {
+    label: 'Magazijn (2)',
+    safeExits: { west: 'magazijn1', east: 'magazijn3', north: 'servies', south: 'kassa' },
+    traps: { west: 'Vorkheftruck laadperron — geblokkeerd.' },
+    shortcuts: ['north', 'south'],
     blueprint: { x: 2, y: 2 },
   },
-  lighting: {
-    label: 'Lighting',
-    safeExits: { south: 'cafeteria' },
-    traps: {},
+  magazijn3: {
+    label: 'Magazijn (3)',
+    safeExits: { west: 'magazijn2', east: 'bijnaKlaar' },
+    traps: {
+      north: 'Inkomende vracht — afgesloten.',
+      south: 'Containerterrein — geen uitgang.',
+    },
     blueprint: { x: 3, y: 2 },
   },
-  cafeteria: {
-    label: 'Cafeteria',
-    safeExits: { east: 'exit' },
-    traps: {},
+  bijnaKlaar: {
+    label: 'Bijna-klaar-sale',
+    safeExits: { west: 'magazijn3', south: 'koopjeshoek' },
+    traps: {
+      north: 'Defecte banken — niet betreden.',
+      east: 'Aanbieding-rollator — valgevaar.',
+    },
+    blueprint: { x: 4, y: 2 },
+  },
+  koopjeshoek: {
+    label: 'Koopjeshoek',
+    safeExits: { north: 'bijnaKlaar', west: 'kassa' },
+    traps: {
+      south: 'Restpartij tapijten — stapel instort.',
+      east: 'Impulsaankopen — geen uitgang.',
+    },
+    blueprint: { x: 4, y: 3 },
+  },
+  kassa: {
+    label: 'Kassa',
+    safeExits: { east: 'koopjeshoek', west: 'hotdogstand', north: 'magazijn2' },
+    traps: { south: 'Self-checkout — scanfout, blijf hangen.' },
+    shortcuts: ['north'],
     blueprint: { x: 3, y: 3 },
   },
-  exit: {
-    label: 'Exit Door',
-    safeExits: {},
-    traps: {},
-    blueprint: { x: 4, y: 3 },
+  hotdogstand: {
+    label: 'Hotdogstand',
+    safeExits: { east: 'kassa' },
+    traps: {
+      north: 'Koffiecorner — wachtrij.',
+      south: 'Softijs machine — plakkerig.',
+      west: 'Uitgang naar parkeerplaats — nog niet!',
+    },
+    blueprint: { x: 2, y: 3 },
     isExit: true,
   },
 };
 
-/** Daughter landmark hints per room (when standing in that room). */
+/** Sensory landmarks per room (Player 2 scene hints). */
 export const MAZE_LANDMARKS = {
-  entrance: { landmark: 'Welcome arrows', hint: 'Head East into the showroom maze.' },
-  livingRoom: { landmark: 'POÄNG chair', hint: 'POÄNG chair points East — follow it!' },
-  kitchen: { landmark: 'BLÅHAJ shark', hint: 'BLÅHAJ says avoid North — it is a trap!' },
-  bedroom: { landmark: 'KÖTTBULLAR sign', hint: 'The path continues East toward Lighting!' },
-  lighting: { landmark: 'BILLY boxes', hint: 'Stack of BILLY boxes — head South toward food!' },
-  cafeteria: { landmark: 'Lingonberry display', hint: 'You smell freedom — go East to the Exit!' },
+  entrance: { landmark: 'Welkomst-pijlen en gele tasrekken', hint: 'Start richting huiskamers.' },
+  huiskamers: { landmark: 'POÄNG fauteuils en KALLAX wanden', hint: 'Door naar slaapkamers.' },
+  slaapkamers: { landmark: 'MALM bedden en HEMNES kasten', hint: 'Langs kinderkamers of korte route zuid.' },
+  kinderkamers: { landmark: 'STUVA speelhoek en FLISAT tafel', hint: 'Richting kantoor.' },
+  kantoor: { landmark: 'MICKE bureaus en MARKERAD lamp', hint: 'Naar badkamers beneden.' },
+  badkamers: { landmark: 'GODMORGON wastafels en spiegels', hint: 'Door naar keukens.' },
+  keukens: { landmark: 'METOD keukenblokken en voorbeeld-eiland', hint: 'Naar pannen of korte route terug.' },
+  pannen: { landmark: 'SKÅNKA pannenset en kookgerei', hint: 'Servies is westwaarts.' },
+  servies: { landmark: 'FÄRGRIK borden en glazen rek', hint: 'Martelwerktuigen west, magazijn shortcut zuid.' },
+  martelwerktuigen: { landmark: 'BILLY met extra schroefsets', hint: 'Naar planten beneden.' },
+  planten: { landmark: 'FEJKA kunstplanten en grote cactussen', hint: 'Magazijn (1) is oostwaarts.' },
+  magazijn1: { landmark: 'Palletrek rij A met flatpacks', hint: 'Door naar magazijn (2).' },
+  magazijn2: { landmark: 'Heftruck parkeerplek en rek 42', hint: 'Korte routes naar servies of kassa.' },
+  magazijn3: { landmark: 'Scan-station en rollencontainer', hint: 'Bijna-klaar-sale is oost.' },
+  bijnaKlaar: { landmark: 'Oranje stickers en deuken in karton', hint: 'Koopjeshoek beneden.' },
+  koopjeshoek: { landmark: 'As-is rekken met rode prijskaartjes', hint: 'Kassa is west.' },
+  kassa: { landmark: 'Kassaband nummer 12 piept', hint: 'Hotdogstand west, magazijn shortcut noord.' },
+  hotdogstand: { landmark: 'Geur van KÖTTBULLAR en mosterd', hint: 'Je bent er bijna — uitgang!' },
 };
 
 /** Cafeteria menu items with rune labels (prices hidden from P2 until decoded). */

@@ -13,6 +13,7 @@ import {
 import {
   buildWarehouseLookupCatalog,
   filterWarehouseLocations,
+  resolveWarehouseFlashEntry,
   validateCrosswordCompletionCode,
   warehouseLocationCount,
 } from '../src/ikea/logic/levels/crossword.js';
@@ -118,5 +119,28 @@ describe('filterWarehouseLocations', () => {
     const hits = filterWarehouseLocations('GAME1234', puzzle, partial);
     expect(hits.some((entry) => entry.location === target)).toBe(true);
     expect(hits.length).toBeGreaterThan(1);
+  });
+});
+
+describe('resolveWarehouseFlashEntry', () => {
+  it('returns the puzzle answer for an exact location search', () => {
+    const puzzle = selectCrosswordBySeed('GAME1234');
+    const target = puzzle.words[0];
+    const entry = resolveWarehouseFlashEntry('GAME1234', puzzle, target.location);
+    expect(entry?.location).toBe(target.location);
+    expect(entry?.answer).toBe(target.answer);
+  });
+
+  it('returns null when multiple partial matches remain', () => {
+    const puzzle = selectCrosswordBySeed('GAME1234');
+    const partial = puzzle.words[0].location.slice(0, 5);
+    expect(filterWarehouseLocations('GAME1234', puzzle, partial).length).toBeGreaterThan(1);
+    expect(resolveWarehouseFlashEntry('GAME1234', puzzle, partial)).toBeNull();
+  });
+
+  it('includes answers on every warehouse catalog row', () => {
+    const puzzle = selectCrosswordBySeed('GAME1234');
+    const catalog = buildWarehouseLookupCatalog('GAME1234', puzzle);
+    expect(catalog.every((entry) => entry.answer && entry.answer.length === entry.length)).toBe(true);
   });
 });

@@ -7,31 +7,83 @@ const STORAGE_KEY = 'ikea:session';
 const PENDING_P1_KEY = 'ikea:p1Pending';
 
 /** Unambiguous uppercase alphanumeric set for session codes. */
-const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+/** Total session code length: payload + CRC suffix. */
+export const SESSION_CODE_LENGTH = 6;
+
+/** CRC suffix length appended to every generated session code. */
+export const SESSION_CODE_CRC_LENGTH = 2;
+
+/** Random payload length before the CRC suffix. */
+export const SESSION_CODE_PAYLOAD_LENGTH = SESSION_CODE_LENGTH - SESSION_CODE_CRC_LENGTH;
+
+/** CRC-16/CCITT-FALSE polynomial for session code checksums. */
+const CRC16_POLYNOMIAL = 0x1021;
 
 /**
- * Creates a random session code for Player 1 to share.
- * @param {number} [length=8]
+ * Computes the two-character CRC suffix for a session code payload.
+ * @param {string} payload - Uppercase payload without CRC suffix.
  * @returns {string}
  */
-export function generateSessionCode(length = 8) {
-  const bytes = new Uint8Array(length);
-  crypto.getRandomValues(bytes);
-  let code = '';
-  for (let i = 0; i < length; i += 1) {
-    code += CODE_CHARS[bytes[i] % CODE_CHARS.length];
+export function computeSessionCodeCrc(payload) {
+  const normalized = (payload || '').trim().toUpperCase();
+  let crc = 0xffff;
+
+  for (let i = 0; i < normalized.length; i += 1) {
+    const ch = normalized[i];
+    if (!CODE_CHARS.includes(ch)) {
+      throw new Error(`Invalid session code character: ${ch}`);
+    }
+    crc ^= ch.charCodeAt(0) << 8;
+    for (let bit = 0; bit < 8; bit += 1) {
+      if (crc & 0x8000) {
+        crc = ((crc << 1) ^ CRC16_POLYNOMIAL) & 0xffff;
+      } else {
+        crc = (crc << 1) & 0xffff;
+      }
+    }
   }
-  return code;
+
+  const alphabetSize = CODE_CHARS.length;
+  const value = crc % (alphabetSize * alphabetSize);
+  return CODE_CHARS[Math.floor(value / alphabetSize)] + CODE_CHARS[value % alphabetSize];
 }
 
 /**
- * Checks whether a join code has valid shape.
+ * Creates a random session code with a CRC-protected suffix for P2/P3 validation.
+ * @returns {string}
+ */
+export function generateSessionCode() {
+  const bytes = new Uint8Array(SESSION_CODE_PAYLOAD_LENGTH);
+  crypto.getRandomValues(bytes);
+  let payload = '';
+  for (let i = 0; i < SESSION_CODE_PAYLOAD_LENGTH; i += 1) {
+    payload += CODE_CHARS[bytes[i] % CODE_CHARS.length];
+  }
+  return `${payload}${computeSessionCodeCrc(payload)}`;
+}
+
+/**
+ * Checks whether a join code has valid shape and CRC suffix.
  * @param {string} code
  * @returns {boolean}
  */
 export function validateSessionJoin(code) {
-  const normalized = (code || '').trim().toUpperCase();
-  return normalized.length >= 6 && normalized.length <= 8 && /^[A-Z0-9]+$/.test(normalized);
+  const normalized = normalizeSessionCode(code);
+  if (normalized.length !== SESSION_CODE_LENGTH) {
+    return false;
+  }
+  if (!/^[A-Z0-9]+$/.test(normalized)) {
+    return false;
+  }
+  if ([...normalized].some((ch) => !CODE_CHARS.includes(ch))) {
+    return false;
+  }
+
+  const payload = normalized.slice(0, SESSION_CODE_PAYLOAD_LENGTH);
+  const suffix = normalized.slice(SESSION_CODE_PAYLOAD_LENGTH);
+  return computeSessionCodeCrc(payload) === suffix;
 }
 
 /**

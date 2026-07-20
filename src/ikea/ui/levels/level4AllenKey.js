@@ -1,19 +1,30 @@
 /**
- * Level 4 UI: flashing Allen keys (P1), rhythm readout (Daughter), keypad (P2).
+ * Level 3 UI: blues band — Meike (Hammond), Monique (flute), Jelle (bass).
  */
-import { ALLEN_KEY_COLORS } from '../../logic/puzzleData.js';
 import {
-  RHYTHM_WINDOW_MS,
-  generateSequence,
-  isPartialMatch,
-  isRhythmExpired,
-  sequencesMatch,
-} from '../../logic/levels/allenKey.js';
-import { playClick, playSuccess, playError } from '../../audio/ikeaSynth.js';
+  BLUES_CHORDS,
+  BLUES_PROGRESSION,
+  CHORDS_PER_BAR,
+  MAX_CHORD_MISTAKES,
+  bluesChordLabel,
+  bluesPositionForIndex,
+  isBluesProgressionComplete,
+  isExpectedChordAt,
+  shouldResetBluesAttempt,
+} from '../../logic/levels/bluesChords.js';
+import {
+  peekNextBassBluesRole,
+  peekNextFluteArpeggioDirection,
+  playBassBluesChord,
+  playBluesChord,
+  playClick,
+  playError,
+  playFluteBluesChord,
+  playSuccess,
+  resetBassAlternation,
+  resetFluteAlternation,
+} from '../../audio/ikeaSynth.js';
 import { burstConfetti, showToast, wobbleElement } from '../feedback.js';
-
-const FLASH_ON_MS = 700;
-const FLASH_OFF_MS = 300;
 
 /**
  * @param {HTMLElement} container
@@ -23,151 +34,199 @@ const FLASH_OFF_MS = 300;
 export function renderLevel4(container, session, onComplete) {
   container.innerHTML = '';
   const panel = document.createElement('section');
-  panel.className = 'ikea-level ikea-level--4';
-  const sequence = generateSequence(session.seed);
+  panel.className = 'ikea-level ikea-level--blues';
 
-  if (session.role === 'p1') {
-    panel.innerHTML = buildP1View();
-    wireP1Flash(panel, sequence);
-  } else if (session.role === 'p2') {
-    panel.innerHTML = buildP2View();
-    wireP2Keypad(panel, sequence, onComplete);
+  if (session.role === 'daughter') {
+    panel.innerHTML = buildMeikeView();
+    wireMeikeKeypad(panel, onComplete);
+  } else if (session.role === 'p1') {
+    panel.innerHTML = buildCoachView(
+      'Monique',
+      'Lees het blues-schema voor Meike: 4 akkoorden per maat, tonica C majeur.',
+      'Fluit — tik een akkoord: arpeggio wisselt laag→hoog en hoog→laag.',
+      '<p class="ikea-bass-next">Volgende arpeggio: <strong class="ikea-flute-next-val">laag → hoog</strong></p>',
+    );
+    wireFluteKeypad(panel);
   } else {
-    panel.innerHTML = buildDaughterView();
-    wireDaughterReadout(panel, sequence);
+    panel.innerHTML = buildCoachView(
+      'Jelle',
+      'Tel de maten mee en help Meike. Na 3 fout piept het — dan opnieuw vanaf maat 1.',
+      'Bas — tik een akkoord: grondtoon en kwint wisselen om en om.',
+      '<p class="ikea-bass-next">Volgende noot: <strong class="ikea-bass-next-val">grondtoon</strong></p>',
+    );
+    wireBassKeypad(panel);
   }
 
   container.appendChild(panel);
 }
 
-function buildP1View() {
-  const keys = ALLEN_KEY_COLORS.map(
-    (c) => `<div class="ikea-allen-key ikea-allen-key--${c}" data-color="${c}"></div>`,
-  ).join('');
-  return `
-    <h2 class="ikea-level-title">Level 3: Unbrakonyckel</h2>
-    <p>Watch the Allen key rhythm — call nothing out, let the Specialist read!</p>
-    <div class="ikea-allen-display">${keys}</div>
-  `;
-}
-
-function buildP2View() {
-  const keys = ALLEN_KEY_COLORS.map(
-    (c) =>
-      `<button type="button" class="ikea-btn ikea-keypad-btn ikea-allen-key--${c}" data-color="${c}">${c}</button>`,
-  ).join('');
-  return `
-    <h2 class="ikea-level-title">Level 3: Unbrakonyckel</h2>
-    <p>Repeat the color sequence within 5 seconds!</p>
-    <p class="ikea-rhythm-timer">Time: <span class="ikea-timer-val">5.0</span>s</p>
-    <div class="ikea-keypad">${keys}</div>
-    <p class="ikea-keypad-progress"></p>
-  `;
-}
-
-function buildDaughterView() {
-  return `
-    <h2 class="ikea-level-title">Level 3: Rhythm Guide</h2>
-    <p>Read the colors aloud as they light up!</p>
-    <p class="ikea-daughter-rhythm ikea-mono">—</p>
-  `;
-}
-
 /**
- * @param {HTMLElement} panel
- * @param {string[]} sequence
+ * @returns {string}
  */
-function wireP1Flash(panel, sequence) {
-  const keys = panel.querySelectorAll('.ikea-allen-key');
-  let idx = 0;
-
-  const flashOne = () => {
-    keys.forEach((k) => k.classList.remove('ikea-allen-key--lit'));
-    const color = sequence[idx % sequence.length];
-    const el = panel.querySelector(`.ikea-allen-key[data-color="${color}"]`);
-    el?.classList.add('ikea-allen-key--lit');
-    window.setTimeout(() => {
-      el?.classList.remove('ikea-allen-key--lit');
-      idx += 1;
-      window.setTimeout(flashOne, FLASH_OFF_MS);
-    }, FLASH_ON_MS);
-  };
-  flashOne();
+function buildChordKeypadHtml() {
+  const keys = BLUES_CHORDS.map(
+    (chord) =>
+      `<button type="button" class="ikea-btn ikea-chord-btn" data-chord="${chord}">${chord}</button>`,
+  ).join('');
+  return `<div class="ikea-chord-keypad">${keys}</div>`;
 }
 
 /**
- * @param {HTMLElement} panel
- * @param {string[]} sequence
+ * @param {string} name
+ * @param {string} intro
+ * @param {string} instrumentLine
+ * @param {string} nextHintHtml
+ * @returns {string}
  */
-function wireDaughterReadout(panel, sequence) {
-  const out = panel.querySelector('.ikea-daughter-rhythm');
-  let idx = 0;
-  const tick = () => {
-    const color = sequence[idx % sequence.length];
-    if (out) out.textContent = color.toUpperCase();
-    idx += 1;
-    window.setTimeout(tick, FLASH_ON_MS + FLASH_OFF_MS);
-  };
-  tick();
+function buildCoachView(name, intro, instrumentLine, nextHintHtml) {
+  const bars = BLUES_PROGRESSION.map(
+    (bar, index) =>
+      `<div class="ikea-blues-bar">
+        <span class="ikea-blues-bar-label">Maat ${index + 1}</span>
+        <span class="ikea-blues-bar-chords">${bar.map((chord) => bluesChordLabel(chord)).join(' · ')}</span>
+      </div>`,
+  ).join('');
+
+  return `
+    <h2 class="ikea-level-title">Level 3: Blues-schema</h2>
+    <p><strong>${name}:</strong> ${intro}</p>
+    <div class="ikea-blues-chart" aria-label="12-bar blues schema">
+      ${bars}
+    </div>
+    <p class="ikea-hint">Maat 3 begint met <strong>II (Dm)</strong> — ii in de ii–V–I–V turnaround.</p>
+    <p class="ikea-instrument-label">${instrumentLine}</p>
+    ${nextHintHtml}
+    ${buildChordKeypadHtml()}
+    <p class="ikea-hint">Alleen Meike's invoer telt voor het level; jullie spelen mee op jullie instrument.</p>
+  `;
+}
+
+function buildMeikeView() {
+  return `
+    <h2 class="ikea-level-title">Level 3: Blues-schema</h2>
+    <p>Speel het 12-bar blues-schema in C: <strong>4 akkoorden per maat</strong>. Monique (fluit) en Jelle (bas) begeleiden je.</p>
+    <p class="ikea-instrument-label">Hammond — volledig akkoord per toets.</p>
+    <p class="ikea-blues-progress">Maat <span class="ikea-blues-bar-val">1</span> · akkoord <span class="ikea-blues-slot-val">1</span> van ${CHORDS_PER_BAR}</p>
+    <p class="ikea-blues-entered ikea-mono">—</p>
+    ${buildChordKeypadHtml()}
+    <p class="ikea-buzz-count">Fouten: <span class="ikea-buzz-val">0</span> / ${MAX_CHORD_MISTAKES}</p>
+  `;
 }
 
 /**
  * @param {HTMLElement} panel
- * @param {string[]} sequence
+ */
+function wireFluteKeypad(panel) {
+  const nextEl = panel.querySelector('.ikea-flute-next-val');
+
+  const updateNextLabel = () => {
+    if (!nextEl) return;
+    nextEl.textContent =
+      peekNextFluteArpeggioDirection() === 'descending' ? 'hoog → laag' : 'laag → hoog';
+  };
+
+  resetFluteAlternation();
+  updateNextLabel();
+
+  panel.querySelectorAll('.ikea-chord-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const chord = btn.getAttribute('data-chord');
+      if (!chord) return;
+      playFluteBluesChord(chord);
+      updateNextLabel();
+    });
+  });
+}
+
+/**
+ * @param {HTMLElement} panel
+ */
+function wireBassKeypad(panel) {
+  const nextEl = panel.querySelector('.ikea-bass-next-val');
+
+  const updateNextLabel = () => {
+    if (!nextEl) return;
+    nextEl.textContent = peekNextBassBluesRole() === 'fifth' ? 'kwint (5e)' : 'grondtoon';
+  };
+
+  resetBassAlternation();
+  updateNextLabel();
+
+  panel.querySelectorAll('.ikea-chord-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const chord = btn.getAttribute('data-chord');
+      if (!chord) return;
+      playBassBluesChord(chord);
+      updateNextLabel();
+    });
+  });
+}
+
+/**
+ * @param {HTMLElement} panel
  * @param {() => void} onComplete
  */
-function wireP2Keypad(panel, sequence, onComplete) {
+function wireMeikeKeypad(panel, onComplete) {
   /** @type {string[]} */
-  let input = [];
-  let roundStart = Date.now();
-  const progressEl = panel.querySelector('.ikea-keypad-progress');
-  const timerEl = panel.querySelector('.ikea-timer-val');
+  let entered = [];
+  let mistakes = 0;
 
-  const resetRound = () => {
-    input = [];
-    roundStart = Date.now();
-    if (progressEl) progressEl.textContent = 'Sequence reset — listen again!';
-    showToast('New sequence — go!');
+  const barEl = panel.querySelector('.ikea-blues-bar-val');
+  const slotEl = panel.querySelector('.ikea-blues-slot-val');
+  const enteredEl = panel.querySelector('.ikea-blues-entered');
+  const buzzEl = panel.querySelector('.ikea-buzz-val');
+
+  const updateProgressUi = () => {
+    const pos = bluesPositionForIndex(entered.length);
+    if (barEl) barEl.textContent = String(pos.bar);
+    if (slotEl) slotEl.textContent = String(pos.slot);
+    if (enteredEl) {
+      enteredEl.textContent = entered.length > 0 ? entered.join(' · ') : '—';
+    }
+    if (buzzEl) buzzEl.textContent = String(mistakes);
   };
 
-  const timerId = window.setInterval(() => {
-    const left = Math.max(0, RHYTHM_WINDOW_MS - (Date.now() - roundStart));
-    if (timerEl) timerEl.textContent = (left / 1000).toFixed(1);
-    if (isRhythmExpired(roundStart) && input.length > 0 && input.length < sequence.length) {
-      playError();
-      wobbleElement(panel);
-      resetRound();
-    }
-  }, 100);
+  const resetAttempt = () => {
+    entered = [];
+    mistakes = 0;
+    resetBassAlternation();
+    updateProgressUi();
+    showToast('3× fout — opnieuw vanaf maat 1!');
+    wobbleElement(panel);
+  };
 
-  panel.querySelectorAll('.ikea-keypad-btn').forEach((btn) => {
+  panel.querySelectorAll('.ikea-chord-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
+      const chord = btn.getAttribute('data-chord');
+      if (!chord) return;
+
       playClick();
-      if (isRhythmExpired(roundStart)) {
-        resetRound();
-        return;
-      }
-      const color = btn.getAttribute('data-color');
-      if (!color) return;
-      input.push(color);
-      if (progressEl) progressEl.textContent = `Entered: ${input.join(' → ')}`;
+      playBluesChord(chord);
 
-      if (!isPartialMatch(sequence, input)) {
+      if (!isExpectedChordAt(entered.length, chord)) {
+        mistakes += 1;
         playError();
-        wobbleElement(panel);
-        resetRound();
+        wobbleElement(btn);
+        updateProgressUi();
+        if (shouldResetBluesAttempt(mistakes)) {
+          resetAttempt();
+        } else {
+          showToast(`Fout akkoord! Nog ${MAX_CHORD_MISTAKES - mistakes} pogingen.`);
+        }
         return;
       }
 
-      if (sequencesMatch(sequence, input)) {
-        window.clearInterval(timerId);
+      entered.push(chord);
+      updateProgressUi();
+
+      if (isBluesProgressionComplete(entered.length)) {
         playSuccess();
         burstConfetti();
-        showToast('FANTASTISKT!');
+        showToast('FANTASTISKT! Lees je 4CODE voor Monique en Jelle.');
         onComplete();
       }
     });
   });
 
-  resetRound();
+  updateProgressUi();
 }

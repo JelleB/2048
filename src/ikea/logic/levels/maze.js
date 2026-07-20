@@ -4,10 +4,48 @@
 import { MAZE_LANDMARKS, MAZE_ROOMS } from '../puzzleData.js';
 
 export const MAZE_START = 'entrance';
-export const MAZE_EXIT = 'exit';
+export const MAZE_EXIT = 'hotdogstand';
 
-/** Minimum safe moves from entrance to exit (excluding entrance). */
-export const MAZE_SAFE_MOVE_COUNT = 5;
+/** Main-route directions from entrance to hotdogstand (17 steps). */
+export const MAZE_MAIN_PATH = [
+  'east',
+  'east',
+  'east',
+  'east',
+  'south',
+  'west',
+  'west',
+  'west',
+  'west',
+  'south',
+  'east',
+  'east',
+  'east',
+  'east',
+  'south',
+  'west',
+  'west',
+];
+
+/** Minimum safe moves on the main route (excluding entrance). */
+export const MAZE_SAFE_MOVE_COUNT = MAZE_MAIN_PATH.length;
+
+/** @type {Record<'north'|'south'|'east'|'west', string>} */
+export const MAZE_DIRECTION_LABELS = {
+  north: 'Noord',
+  south: 'Zuid',
+  east: 'Oost',
+  west: 'West',
+};
+
+/** @typedef {'north'|'south'|'east'|'west'} MazeDirection */
+
+/**
+ * @typedef {object} MazeTrapWarning
+ * @property {MazeDirection} direction
+ * @property {string} directionLabel
+ * @property {string} warning
+ */
 
 /**
  * @typedef {object} MazeMoveResult
@@ -17,6 +55,46 @@ export const MAZE_SAFE_MOVE_COUNT = 5;
  * @property {boolean} won
  * @property {string} [message]
  */
+
+/**
+ * Sensory hint for Player 2 — no room name.
+ * @param {string} roomId
+ * @returns {string}
+ */
+export function getSceneHint(roomId) {
+  if (roomId === MAZE_EXIT) {
+    return 'Een groene nooddeur met een exit-bord. Je ruikt vrijheid!';
+  }
+  const landmark = MAZE_LANDMARKS[roomId];
+  if (!landmark) {
+    return 'Gele pijlen op de grond en IKEA-meubels overal om je heen.';
+  }
+  return `Je ziet: ${landmark.landmark}.`;
+}
+
+/**
+ * Trap warnings for Meike at the current mirrored location.
+ * @param {string} roomId
+ * @returns {MazeTrapWarning[]}
+ */
+export function getTrapWarnings(roomId) {
+  const room = MAZE_ROOMS[roomId];
+  if (!room) {
+    return [];
+  }
+
+  /** @type {MazeTrapWarning[]} */
+  const warnings = [];
+  for (const [direction, trapMessage] of Object.entries(room.traps || {})) {
+    const dir = /** @type {MazeDirection} */ (direction);
+    warnings.push({
+      direction: dir,
+      directionLabel: MAZE_DIRECTION_LABELS[dir],
+      warning: `Niet naar ${MAZE_DIRECTION_LABELS[dir]}! ${trapMessage}`,
+    });
+  }
+  return warnings;
+}
 
 /**
  * Attempts a directional move from the current room.
@@ -81,6 +159,7 @@ export function getBlueprintNodes() {
     x: room.blueprint.x,
     y: room.blueprint.y,
     lockedDoors: room.lockedDoors || [],
+    shortcuts: room.shortcuts || [],
     isExit: Boolean(room.isExit),
   }));
 }

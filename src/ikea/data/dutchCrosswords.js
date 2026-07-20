@@ -30,6 +30,7 @@
  * @typedef {object} WarehouseClueEntry
  * @property {string} location
  * @property {string} clue
+ * @property {string} answer - Uppercase word at this location (Meike flash only).
  * @property {number} length
  * @property {string} directionLabel
  * @property {number} number

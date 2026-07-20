@@ -61,6 +61,6 @@ describe('normalizeSession', () => {
 
 describe('displayLevelTitle', () => {
   it('returns allen key title for internal level 4', () => {
-    expect(displayLevelTitle(ALLEN_KEY_LEVEL)).toBe('Unbrakonyckel');
+    expect(displayLevelTitle(ALLEN_KEY_LEVEL)).toBe('Blues-schema');
   });
 });

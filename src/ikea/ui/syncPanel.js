@@ -6,7 +6,7 @@ import {
   crosswordCompletionCode,
 } from '../logic/crosswordLayout.js';
 import { getSlotProgress, getTimeSlot, syncCodeForSeed, validateSyncCode } from '../logic/syncEngine.js';
-import { displayLevelNumber, nextPlayableLevel } from '../logic/levelProgression.js';
+import { displayLevelNumber, nextPlayableLevel, ALLEN_KEY_LEVEL } from '../logic/levelProgression.js';
 import { playClick, playError, playSuccess } from '../audio/ikeaSynth.js';
 import { glowSuccess, wobbleElement } from './feedback.js';
 
@@ -26,12 +26,38 @@ const COPY = {
     '4CODE na elk level: wacht tot de puzzel opgelost is, dan leest Monique de code voor.',
   daughterWaiting:
     '4CODE na elk level: help het team de code van Monique invoeren zodra de puzzel klaar is.',
-  advance: (nextLevel) =>
+  level2P1Guide:
+    'Geef Jelle route-aanwijzingen via de kaart. Vraag wat hij ziet om zijn positie te vinden.',
+  level2P2Play:
+    'Volg Monique\'s aanwijzingen. Bij de exit krijg jij de 4CODE voor het team.',
+  level2DaughterPlay:
+    'Volg Jelle\'s stappen op je pad en roep waarschuwingen als er vallen in de buurt zijn.',
+  level2P2CodeReader:
+    'Level klaar! Lees je 4CODE hardop — Monique en Meike voeren hem in om door te gaan.',
+  level3P1Coach:
+    'Lees het schema voor Meike en speel mee op fluit (arpeggio laag↔hoog per akkoord).',
+  level3P2Coach:
+    'Tel de maten en speel bas: grondtoon ↔ kwint per akkoordtoets.',
+  level3DaughterPlay:
+    'Speel het schema in — na afloop lees jij de 4CODE voor Monique en Jelle.',
+  level3DaughterCodeReader:
+    'Level klaar! Lees je 4CODE hardop — Monique en Jelle voeren hem in voor het certificaat.',
+  advanceFromDaughter: () =>
+    'Level klaar! Meike leest haar 4CODE voor. Voer hem in voor het certificaat.',
+  advanceFromP1: (nextLevel) =>
     `Level klaar! Monique: lees je huidige 4CODE voor. Iedereen: voer hem in voor Level ${nextLevel}.`,
+  advanceFromP2: (nextLevel) =>
+    `Level klaar! Jelle: lees je 4CODE voor. Monique & Meike: voer hem in voor Level ${nextLevel}.`,
 };
 
 /**
  * @typedef {'level1-complete'|'advance'} SyncAdvanceKind
+ */
+
+/**
+ * @typedef {object} AdvanceGateOptions
+ * @property {string} codeSourceLabel
+ * @property {string} helpText
  */
 
 /**
@@ -54,16 +80,106 @@ export function renderSyncPanel(footer, session, onAdvance) {
     return;
   }
 
+  if (session.level === 2) {
+    renderLevel2Sync(wrap, session, onAdvance);
+    footer.appendChild(wrap);
+    return;
+  }
+
+  if (session.level === ALLEN_KEY_LEVEL) {
+    renderLevel3BluesSync(wrap, session, onAdvance);
+    footer.appendChild(wrap);
+    return;
+  }
+
   if (session.levelComplete) {
-    wrap.appendChild(buildAdvanceGate(session, onAdvance));
+    wrap.appendChild(
+      buildAdvanceGate(session, onAdvance, {
+        codeSourceLabel: 'Monique',
+        helpText: COPY.advanceFromP1(displayLevelNumber(nextPlayableLevel(session.level))),
+      }),
+    );
   } else if (session.role === 'p1') {
-    wrap.appendChild(buildP1Panel());
-    startP1Animation(session.seed, wrap);
+    wrap.appendChild(buildCodeReaderPanel(COPY.p1Active));
+    startCodeAnimation(session.seed, wrap);
   } else {
     wrap.appendChild(buildWaitingPanel(session.role));
   }
 
   footer.appendChild(wrap);
+}
+
+/**
+ * @param {HTMLElement} wrap
+ * @param {import('../logic/session.js').IkeaSession} session
+ * @param {(syncOk: boolean, kind?: SyncAdvanceKind) => void} onAdvance
+ */
+function renderLevel2Sync(wrap, session, onAdvance) {
+  const nextLevel = displayLevelNumber(nextPlayableLevel(session.level));
+
+  if (session.levelComplete) {
+    if (session.role === 'p2') {
+      wrap.appendChild(buildCodeReaderPanel(COPY.level2P2CodeReader));
+      startCodeAnimation(session.seed, wrap);
+      return;
+    }
+
+    wrap.appendChild(
+      buildAdvanceGate(session, onAdvance, {
+        codeSourceLabel: 'Jelle',
+        helpText: COPY.advanceFromP2(nextLevel),
+      }),
+    );
+    return;
+  }
+
+  if (session.role === 'p1') {
+    wrap.appendChild(buildStaticHelpPanel('Level 2 · Kaartlezer', COPY.level2P1Guide));
+    return;
+  }
+
+  if (session.role === 'p2') {
+    wrap.appendChild(buildStaticHelpPanel('Level 2 · Navigator', COPY.level2P2Play));
+    return;
+  }
+
+  wrap.appendChild(buildStaticHelpPanel('Level 2 · Beschermer', COPY.level2DaughterPlay));
+}
+
+/**
+ * Level 3 blues: Meike enters chords; on win she reads the 4CODE.
+ * @param {HTMLElement} wrap
+ * @param {import('../logic/session.js').IkeaSession} session
+ * @param {(syncOk: boolean, kind?: SyncAdvanceKind) => void} onAdvance
+ */
+function renderLevel3BluesSync(wrap, session, onAdvance) {
+  if (session.levelComplete) {
+    if (session.role === 'daughter') {
+      wrap.appendChild(buildCodeReaderPanel(COPY.level3DaughterCodeReader));
+      startCodeAnimation(session.seed, wrap);
+      return;
+    }
+
+    wrap.appendChild(
+      buildAdvanceGate(session, onAdvance, {
+        codeSourceLabel: 'Meike',
+        helpText: COPY.advanceFromDaughter(),
+      }),
+    );
+    return;
+  }
+
+  if (session.role === 'p1') {
+    wrap.appendChild(buildStaticHelpPanel('Level 3 · Coach', COPY.level3P1Coach));
+    return;
+  }
+
+  if (session.role === 'p2') {
+    wrap.appendChild(buildStaticHelpPanel('Level 3 · Metronoom', COPY.level3P2Coach));
+    return;
+  }
+
+  wrap.appendChild(buildStaticHelpPanel('Level 3 · Pianist', COPY.level3DaughterPlay));
 }
 
 /**
@@ -92,6 +208,37 @@ function buildLevel1FillFirstPanel() {
   block.innerHTML = `
     <p class="ikea-sync-heading">Level 1 · 4CODE</p>
     <p class="ikea-sync-help">${COPY.p1FillFirst}</p>
+  `;
+  return block;
+}
+
+/**
+ * @param {string} heading
+ * @param {string} help
+ */
+function buildStaticHelpPanel(heading, help) {
+  const block = document.createElement('div');
+  block.className = 'ikea-sync-waiting';
+  block.innerHTML = `
+    <p class="ikea-sync-heading">${heading}</p>
+    <p class="ikea-sync-help">${help}</p>
+  `;
+  return block;
+}
+
+/**
+ * @param {string} help
+ */
+function buildCodeReaderPanel(help) {
+  const block = document.createElement('div');
+  block.className = 'ikea-sync-p1';
+  block.innerHTML = `
+    <p class="ikea-sync-heading">Team sync · 4CODE</p>
+    <p class="ikea-sync-help">${help}</p>
+    <p class="ikea-sync-code-value ikea-sync-code-display" aria-live="polite">----</p>
+    <div class="ikea-sync-bar" role="progressbar" aria-label="Time until code refreshes">
+      <div class="ikea-sync-bar__fill"></div>
+    </div>
   `;
   return block;
 }
@@ -155,7 +302,7 @@ function buildLevel1CompletionEntry(session, puzzle, onAdvance) {
 }
 
 /** @param {string} seed @param {HTMLElement} wrap */
-function startP1Animation(seed, wrap) {
+function startCodeAnimation(seed, wrap) {
   const bar = wrap.querySelector('.ikea-sync-bar__fill');
   const codeEl = wrap.querySelector('.ikea-sync-code-value');
   if (!bar || !codeEl) return;
@@ -177,20 +324,6 @@ export function stopSyncAnimation() {
   }
 }
 
-function buildP1Panel() {
-  const block = document.createElement('div');
-  block.className = 'ikea-sync-p1';
-  block.innerHTML = `
-    <p class="ikea-sync-heading">Team sync · 4CODE</p>
-    <p class="ikea-sync-help">${COPY.p1Active}</p>
-    <p class="ikea-sync-code-value ikea-sync-code-display" aria-live="polite">----</p>
-    <div class="ikea-sync-bar" role="progressbar" aria-label="Time until code refreshes">
-      <div class="ikea-sync-bar__fill"></div>
-    </div>
-  `;
-  return block;
-}
-
 /**
  * @param {'p2'|'daughter'} role
  */
@@ -209,16 +342,17 @@ function buildWaitingPanel(role) {
 /**
  * @param {import('../logic/session.js').IkeaSession} session
  * @param {(syncOk: boolean, kind?: SyncAdvanceKind) => void} onAdvance
+ * @param {AdvanceGateOptions} options
  */
-function buildAdvanceGate(session, onAdvance) {
+function buildAdvanceGate(session, onAdvance, options) {
   const nextLevel = displayLevelNumber(nextPlayableLevel(session.level));
   const block = document.createElement('div');
   block.className = 'ikea-advance-gate';
   block.innerHTML = `
     <p class="ikea-sync-heading">Unlock next level · 4CODE</p>
-    <p class="ikea-sync-help ikea-advance-msg">${COPY.advance(nextLevel)}</p>
+    <p class="ikea-sync-help ikea-advance-msg">${options.helpText}</p>
     <form class="ikea-sync-form">
-      <label class="ikea-sync-form-label" for="ikea-sync-advance-input">4CODE van Monique</label>
+      <label class="ikea-sync-form-label" for="ikea-sync-advance-input">4CODE van ${options.codeSourceLabel}</label>
       <input id="ikea-sync-advance-input" type="text" maxlength="4" class="ikea-input ikea-sync-input" autocomplete="off" autocapitalize="characters" placeholder="4CODE" />
       <button type="submit" class="ikea-btn ikea-btn--green">Unlock Level ${nextLevel}</button>
     </form>
