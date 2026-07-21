@@ -21,6 +21,10 @@ describe('normalizeSessionLevel', () => {
     expect(normalizeSessionLevel(DISABLED_CROSSWORD_LEVEL)).toBe(FIRST_PLAYABLE_LEVEL);
   });
 
+  it('skips disabled crossword level when stored as string', () => {
+    expect(normalizeSessionLevel('1')).toBe(FIRST_PLAYABLE_LEVEL);
+  });
+
   it('skips disabled cafeteria level', () => {
     expect(normalizeSessionLevel(DISABLED_CAFETERIA_LEVEL)).toBe(ALLEN_KEY_LEVEL);
   });

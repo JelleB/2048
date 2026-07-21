@@ -27,17 +27,21 @@ const DISPLAY_TITLES = {
 
 /**
  * Maps legacy/disabled levels to the next playable internal level.
- * @param {number} level
+ * @param {number|string} level
  * @returns {number}
  */
 export function normalizeSessionLevel(level) {
-  if (level === DISABLED_CROSSWORD_LEVEL) {
+  const n = Number(level);
+  if (!Number.isFinite(n)) {
     return FIRST_PLAYABLE_LEVEL;
   }
-  if (level === DISABLED_CAFETERIA_LEVEL) {
+  if (n === DISABLED_CROSSWORD_LEVEL) {
+    return FIRST_PLAYABLE_LEVEL;
+  }
+  if (n === DISABLED_CAFETERIA_LEVEL) {
     return ALLEN_KEY_LEVEL;
   }
-  return level;
+  return n;
 }
 
 /**
@@ -107,13 +111,13 @@ export function internalLevelFromDisplay(displayLevel) {
  */
 export function normalizeSession(session) {
   const level = normalizeSessionLevel(session.level);
-  if (level === session.level) {
+  if (level === session.level && !session.crosswordGridSolved) {
     return session;
   }
   return {
     ...session,
     level,
-    levelComplete: false,
+    levelComplete: level !== session.level ? false : session.levelComplete,
     crosswordGridSolved: false,
   };
 }

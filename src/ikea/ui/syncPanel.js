@@ -6,7 +6,7 @@ import {
   crosswordCompletionCode,
 } from '../logic/crosswordLayout.js';
 import { getSlotProgress, getTimeSlot, syncCodeForSeed, validateSyncCode } from '../logic/syncEngine.js';
-import { displayLevelNumber, nextPlayableLevel, ALLEN_KEY_LEVEL } from '../logic/levelProgression.js';
+import { displayLevelNumber, nextPlayableLevel, ALLEN_KEY_LEVEL, FIRST_PLAYABLE_LEVEL, normalizeSessionLevel } from '../logic/levelProgression.js';
 import { playClick, playError, playSuccess } from '../audio/ikeaSynth.js';
 import { glowSuccess, wobbleElement } from './feedback.js';
 
@@ -74,19 +74,15 @@ export function renderSyncPanel(footer, session, onAdvance) {
   const wrap = document.createElement('div');
   wrap.className = 'ikea-sync-panel';
 
-  if (session.level === 1) {
-    renderLevel1Sync(wrap, session, onAdvance);
-    footer.appendChild(wrap);
-    return;
-  }
+  const level = normalizeSessionLevel(session.level);
 
-  if (session.level === 2) {
+  if (level === FIRST_PLAYABLE_LEVEL) {
     renderLevel2Sync(wrap, session, onAdvance);
     footer.appendChild(wrap);
     return;
   }
 
-  if (session.level === ALLEN_KEY_LEVEL) {
+  if (level === ALLEN_KEY_LEVEL) {
     renderLevel3BluesSync(wrap, session, onAdvance);
     footer.appendChild(wrap);
     return;

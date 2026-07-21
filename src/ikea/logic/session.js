@@ -111,8 +111,18 @@ export function loadSession() {
     if (!raw) {
       return null;
     }
-    const session = JSON.parse(raw);
-    return session ? normalizeSession(session) : null;
+    const parsed = JSON.parse(raw);
+    if (!parsed) {
+      return null;
+    }
+    const normalized = normalizeSession(parsed);
+    if (
+      normalized.level !== parsed.level ||
+      normalized.crosswordGridSolved !== parsed.crosswordGridSolved
+    ) {
+      saveSession(normalized);
+    }
+    return normalized;
   } catch {
     return null;
   }

@@ -15,6 +15,7 @@ import {
   FIRST_PLAYABLE_LEVEL,
   nextPlayableLevel,
   normalizeSession,
+  normalizeSessionLevel,
   VICTORY_LEVEL,
 } from '../logic/levelProgression.js';
 import { renderVictory } from './victory.js';
@@ -104,8 +105,10 @@ export function initIkeaApp() {
   session = loadSession();
   if (session) {
     session = normalizeSession(session);
+    saveSession(session);
   }
-  if (session && session.level >= FIRST_PLAYABLE_LEVEL && session.level <= ALLEN_KEY_LEVEL) {
+  const playableLevel = session ? normalizeSessionLevel(session.level) : 0;
+  if (session && playableLevel >= FIRST_PLAYABLE_LEVEL && playableLevel <= ALLEN_KEY_LEVEL) {
     updateHeaderNav('in-game');
     renderGame(main);
   } else if (session && session.level >= VICTORY_LEVEL) {
@@ -121,7 +124,7 @@ export function initIkeaApp() {
  * @param {import('../logic/session.js').IkeaSession} newSession
  */
 function startSession(newSession) {
-  session = { ...newSession, levelComplete: false };
+  session = normalizeSession({ ...newSession, levelComplete: false });
   saveSession(session);
   updateHeaderNav('in-game');
   const main = document.getElementById('ikea-main');
@@ -131,7 +134,12 @@ function startSession(newSession) {
 function renderGame(main) {
   if (!session) return;
 
+  session = normalizeSession(session);
+  saveSession(session);
+
   updateHeaderNav('in-game');
+
+  const level = normalizeSessionLevel(session.level);
 
   main.innerHTML = `
     <div class="ikea-game-header">
@@ -159,8 +167,8 @@ function renderGame(main) {
     refreshFooter();
   };
 
-  switch (session.level) {
-    case 2:
+  switch (level) {
+    case FIRST_PLAYABLE_LEVEL:
       renderLevel2(levelRoot, session, onLevelComplete);
       break;
     case ALLEN_KEY_LEVEL:
