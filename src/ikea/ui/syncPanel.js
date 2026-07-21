@@ -17,7 +17,7 @@ const COPY = {
   p1FillFirst:
     'Vul eerst het kruiswoord in. Als alles klopt, verschijnt hier een nieuwe 4CODE voor je team.',
   p1CompletionCode:
-    'Kruiswoord klaar! Lees deze 4CODE hardop — Jelle & Meike voeren hem in om door te gaan.',
+    'Kruiswoord klaar! Lees deze 4CODE hardop voor Jelle & Meike, of ga zelf door naar Level 2.',
   p2EnterCompletion:
     'Monique heeft het kruiswoord ingevuld? Voer de 4CODE in die zij voorleest (verschijnt pas als het raster klopt).',
   p1Active:
@@ -192,7 +192,7 @@ function renderLevel1Sync(wrap, session, onAdvance) {
 
   if (session.role === 'p1') {
     if (session.crosswordGridSolved) {
-      wrap.appendChild(buildLevel1CompletionDisplay(session, puzzle));
+      wrap.appendChild(buildLevel1CompletionDisplay(session, puzzle, onAdvance));
     } else {
       wrap.appendChild(buildLevel1FillFirstPanel());
     }
@@ -246,18 +246,24 @@ function buildCodeReaderPanel(help) {
 /**
  * @param {import('../logic/session.js').IkeaSession} session
  * @param {import('../data/dutchCrosswords.js').DutchCrosswordPuzzle} puzzle
+ * @param {(syncOk: boolean, kind?: SyncAdvanceKind) => void} onAdvance
  */
-function buildLevel1CompletionDisplay(session, puzzle) {
+function buildLevel1CompletionDisplay(session, puzzle, onAdvance) {
   const block = document.createElement('div');
   block.className = 'ikea-sync-p1 ikea-sync-p1--completion';
   block.innerHTML = `
     <p class="ikea-sync-heading">Level 1 · Nieuwe 4CODE</p>
     <p class="ikea-sync-help">${COPY.p1CompletionCode}</p>
     <p class="ikea-sync-code-value ikea-sync-code-display ikea-sync-code-display--static" aria-live="polite">----</p>
+    <button type="button" class="ikea-btn ikea-btn--green ikea-l1-continue">Ga door naar Level 2</button>
   `;
   const codeEl = block.querySelector('.ikea-sync-code-display');
   crosswordCompletionCode(session.seed, puzzle.id).then((code) => {
     if (codeEl) codeEl.textContent = code;
+  });
+  block.querySelector('.ikea-l1-continue')?.addEventListener('click', () => {
+    playClick();
+    onAdvance(true, 'level1-complete');
   });
   return block;
 }
