@@ -1,6 +1,9 @@
 /**
- * Playable level order for Lost in IKEA (Level 3 cafeteria disabled).
+ * Playable level order for Lost in IKEA (Level 1 crossword and Level 3 cafeteria disabled).
  */
+
+/** @type {1} Internal session level that is skipped in gameplay. */
+export const DISABLED_CROSSWORD_LEVEL = 1;
 
 /** @type {3} Internal session level that is skipped in gameplay. */
 export const DISABLED_CAFETERIA_LEVEL = 3;
@@ -11,11 +14,13 @@ export const ALLEN_KEY_LEVEL = 4;
 /** @type {5} Internal session level for victory screen. */
 export const VICTORY_LEVEL = 5;
 
+/** First internal level shown when starting or joining a session. */
+export const FIRST_PLAYABLE_LEVEL = 2;
+
 /** @type {number[]} */
-export const PLAYABLE_LEVELS = [1, 2, ALLEN_KEY_LEVEL];
+export const PLAYABLE_LEVELS = [FIRST_PLAYABLE_LEVEL, ALLEN_KEY_LEVEL];
 
 const DISPLAY_TITLES = {
-  1: 'Lager-Korsord',
   2: 'Rum-Labyrint',
   [ALLEN_KEY_LEVEL]: 'Blues-schema',
 };
@@ -26,6 +31,9 @@ const DISPLAY_TITLES = {
  * @returns {number}
  */
 export function normalizeSessionLevel(level) {
+  if (level === DISABLED_CROSSWORD_LEVEL) {
+    return FIRST_PLAYABLE_LEVEL;
+  }
   if (level === DISABLED_CAFETERIA_LEVEL) {
     return ALLEN_KEY_LEVEL;
   }
@@ -38,10 +46,7 @@ export function normalizeSessionLevel(level) {
  */
 export function nextPlayableLevel(currentLevel) {
   const level = normalizeSessionLevel(currentLevel);
-  if (level === 1) {
-    return 2;
-  }
-  if (level === 2) {
+  if (level === FIRST_PLAYABLE_LEVEL) {
     return ALLEN_KEY_LEVEL;
   }
   if (level === ALLEN_KEY_LEVEL) {
@@ -51,17 +56,20 @@ export function nextPlayableLevel(currentLevel) {
 }
 
 /**
- * Player-facing level number shown in the UI (3 puzzle levels total).
+ * Player-facing level number shown in the UI (2 puzzle levels total).
  * @param {number} internalLevel
  * @returns {number}
  */
 export function displayLevelNumber(internalLevel) {
   const level = normalizeSessionLevel(internalLevel);
   if (level >= VICTORY_LEVEL) {
-    return 4;
+    return 3;
   }
   if (level === ALLEN_KEY_LEVEL) {
-    return 3;
+    return 2;
+  }
+  if (level === FIRST_PLAYABLE_LEVEL) {
+    return 1;
   }
   return level;
 }
@@ -77,15 +85,18 @@ export function displayLevelTitle(internalLevel) {
 
 /**
  * Converts a player-facing debug/menu level to internal session level.
- * @param {number} displayLevel - 1–3 puzzle, 4 victory.
+ * @param {number} displayLevel - 1–2 puzzle, 3 victory.
  * @returns {number}
  */
 export function internalLevelFromDisplay(displayLevel) {
-  if (displayLevel >= 4) {
+  if (displayLevel >= 3) {
     return VICTORY_LEVEL;
   }
-  if (displayLevel === 3) {
+  if (displayLevel === 2) {
     return ALLEN_KEY_LEVEL;
+  }
+  if (displayLevel === 1) {
+    return FIRST_PLAYABLE_LEVEL;
   }
   return displayLevel;
 }
@@ -103,5 +114,6 @@ export function normalizeSession(session) {
     ...session,
     level,
     levelComplete: false,
+    crosswordGridSolved: false,
   };
 }

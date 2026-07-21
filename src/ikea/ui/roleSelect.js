@@ -16,6 +16,7 @@ import {
   validateSessionJoin,
   SESSION_CODE_LENGTH,
 } from '../logic/session.js';
+import { FIRST_PLAYABLE_LEVEL } from '../logic/levelProgression.js';
 import { playClick, playError, initAudio } from '../audio/ikeaSynth.js';
 import { wobbleElement } from './feedback.js';
 
@@ -209,7 +210,7 @@ export function renderRoleSelect(main, onStart) {
     onStart({
       seed: generatedCode,
       role: 'p1',
-      level: 1,
+      level: FIRST_PLAYABLE_LEVEL,
       ...defaultSessionNames(),
     });
   });
@@ -231,7 +232,7 @@ export function renderRoleSelect(main, onStart) {
     onStart({
       seed: code,
       role,
-      level: 1,
+      level: FIRST_PLAYABLE_LEVEL,
       ...defaultSessionNames(),
     });
   });

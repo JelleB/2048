@@ -2,10 +2,11 @@
  * Dev-only session mutations for skipping IKEA escape room levels.
  */
 import {
-  ALLEN_KEY_LEVEL,
+  FIRST_PLAYABLE_LEVEL,
   internalLevelFromDisplay,
   nextPlayableLevel,
   normalizeSessionLevel,
+  ALLEN_KEY_LEVEL,
   VICTORY_LEVEL,
 } from './levelProgression.js';
 
@@ -34,15 +35,6 @@ export function applyDebugSkipLevel(session) {
 
   const level = normalizeSessionLevel(session.level);
 
-  if (level === 1) {
-    return {
-      ...session,
-      level: 2,
-      crosswordGridSolved: false,
-      levelComplete: false,
-    };
-  }
-
   if (level === ALLEN_KEY_LEVEL) {
     return {
       ...session,
@@ -60,11 +52,11 @@ export function applyDebugSkipLevel(session) {
 
 /**
  * @param {import('./session.js').IkeaSession} session
- * @param {number} displayLevel - Player-facing level 1–3, or 4 for victory.
+ * @param {number} displayLevel - Player-facing level 1–2, or 3 for victory.
  * @returns {import('./session.js').IkeaSession}
  */
 export function applyDebugJumpToLevel(session, displayLevel) {
-  const level = internalLevelFromDisplay(Math.min(4, Math.max(1, Math.floor(displayLevel))));
+  const level = internalLevelFromDisplay(Math.min(3, Math.max(1, Math.floor(displayLevel))));
 
   return {
     ...session,

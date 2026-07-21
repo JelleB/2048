@@ -88,7 +88,7 @@ function buildCoachView(name, intro, instrumentLine, nextHintHtml) {
   ).join('');
 
   return `
-    <h2 class="ikea-level-title">Level 3: Blues-schema</h2>
+    <h2 class="ikea-level-title">Level 2: Blues-schema</h2>
     <p><strong>${name}:</strong> ${intro}</p>
     <div class="ikea-blues-chart" aria-label="12-bar blues schema">
       ${bars}
@@ -103,7 +103,7 @@ function buildCoachView(name, intro, instrumentLine, nextHintHtml) {
 
 function buildMeikeView() {
   return `
-    <h2 class="ikea-level-title">Level 3: Blues-schema</h2>
+    <h2 class="ikea-level-title">Level 2: Blues-schema</h2>
     <p>Speel het 12-bar blues-schema in C: <strong>4 akkoorden per maat</strong>. Monique (fluit) en Jelle (bas) begeleiden je.</p>
     <p class="ikea-instrument-label">Hammond — volledig akkoord per toets.</p>
     <p class="ikea-blues-progress">Maat <span class="ikea-blues-bar-val">1</span> · akkoord <span class="ikea-blues-slot-val">1</span> van ${CHORDS_PER_BAR}</p>

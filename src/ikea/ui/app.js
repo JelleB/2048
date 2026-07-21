@@ -6,13 +6,13 @@ import { clearSession, loadSession, saveSession } from '../logic/session.js';
 import { gamesMenuUrl } from '../../navigation.js';
 import { renderRoleSelect } from './roleSelect.js';
 import { renderSyncPanel, stopSyncAnimation } from './syncPanel.js';
-import { renderLevel1 } from './levels/level1Crossword.js';
 import { renderLevel2 } from './levels/level2Maze.js';
 import { renderLevel4 } from './levels/level4AllenKey.js';
 import {
   ALLEN_KEY_LEVEL,
   displayLevelNumber,
   displayLevelTitle,
+  FIRST_PLAYABLE_LEVEL,
   nextPlayableLevel,
   normalizeSession,
   VICTORY_LEVEL,
@@ -105,7 +105,7 @@ export function initIkeaApp() {
   if (session) {
     session = normalizeSession(session);
   }
-  if (session && session.level >= 1 && session.level <= ALLEN_KEY_LEVEL) {
+  if (session && session.level >= FIRST_PLAYABLE_LEVEL && session.level <= ALLEN_KEY_LEVEL) {
     updateHeaderNav('in-game');
     renderGame(main);
   } else if (session && session.level >= VICTORY_LEVEL) {
@@ -160,14 +160,6 @@ function renderGame(main) {
   };
 
   switch (session.level) {
-    case 1:
-      renderLevel1(levelRoot, session, (gridSolved) => {
-        if (!session || !gridSolved) return;
-        session.crosswordGridSolved = true;
-        saveSession(session);
-        refreshFooter();
-      });
-      break;
     case 2:
       renderLevel2(levelRoot, session, onLevelComplete);
       break;

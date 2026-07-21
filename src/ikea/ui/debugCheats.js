@@ -42,8 +42,7 @@ export function renderDebugCheats(parent, session, handlers) {
       <select class="ikea-input ikea-debug-level-select">
         <option value="1" ${currentDisplay === 1 ? 'selected' : ''}>Level 1</option>
         <option value="2" ${currentDisplay === 2 ? 'selected' : ''}>Level 2</option>
-        <option value="3" ${currentDisplay === 3 ? 'selected' : ''}>Level 3</option>
-        <option value="4">Victory</option>
+        <option value="3">Victory</option>
       </select>
       <button type="button" class="ikea-btn ikea-btn--debug ikea-debug-go">Go</button>
     </label>

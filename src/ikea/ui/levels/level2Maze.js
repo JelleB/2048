@@ -51,7 +51,7 @@ function buildP1View() {
     })
     .join('');
   return `
-    <h2 class="ikea-level-title">Level 2: Rum-Labyrint</h2>
+    <h2 class="ikea-level-title">Level 1: Rum-Labyrint</h2>
     <p>Vindt uit waar Jelle is op de kaart en geef instructies om <strong>noord, oost, zuid of west</strong> te gaan.</p>
     <div class="ikea-blueprint">${cells}</div>
     <p class="ikea-legend"><span class="ikea-locked">🔒</span> = valdeur · <span class="ikea-shortcut">⚡</span> = korte route</p>
@@ -73,7 +73,7 @@ function buildNavPadHtml() {
 
 function buildP2View() {
   return `
-    <h2 class="ikea-level-title">Level 2: Rum-Labyrint</h2>
+    <h2 class="ikea-level-title">Level 1: Rum-Labyrint</h2>
     <p>Ga <strong>N/O/Z/W</strong> en vertel wat je ziet. Monique stuurt je via de kaart.</p>
     <p class="ikea-scene-hint"><strong>Wat je ziet:</strong> <span class="ikea-scene-hint-val">${getSceneHint(MAZE_START)}</span></p>
     ${buildNavPadHtml()}
@@ -83,7 +83,7 @@ function buildP2View() {
 
 function buildDaughterView() {
   return `
-    <h2 class="ikea-level-title">Level 2: Småland-beschermer</h2>
+    <h2 class="ikea-level-title">Level 1: Småland-beschermer</h2>
     <p>Volg waar Jelle naartoe gaat — je kunt hem beschermen! Tik dezelfde richting en roep waarschuwingen.</p>
     <p class="ikea-scene-hint"><strong>Waar Jelle zou zijn:</strong> <span class="ikea-scene-hint-val">${getSceneHint(MAZE_START)}</span></p>
     ${buildNavPadHtml()}
