@@ -1,10 +1,10 @@
 /**
- * Merges wordlists/*. into src/ikea/data/dutchWordCatalog.js for crossword generation.
+ * Merges wordlists/*. into src/ikkeja/data/dutchWordCatalog.js for crossword generation.
  */
 import fs from 'fs';
 import { pathToFileURL } from 'url';
 
-const OUTPUT = 'src/ikea/data/dutchWordCatalog.js';
+const OUTPUT = 'src/ikkeja/data/dutchWordCatalog.js';
 const WORDLIST_DIR = 'wordlists';
 
 /** @typedef {{ id?: number, word: string, clue: string }} RawEntry */
@@ -62,8 +62,8 @@ async function loadWordlistFiles() {
   /** @type {Map<string, RawEntry>} */
   const merged = new Map();
 
-  const ikea = await import(pathToFileURL(`${WORDLIST_DIR}/gemini-code-1784549441548.js`));
-  mergeEntries(ikea.DUTCH_IKEA_WORDLIST, merged);
+  const ikkejaWordlist = await import(pathToFileURL(`${WORDLIST_DIR}/gemini-code-1784549441548.js`));
+  mergeEntries(ikkejaWordlist.DUTCH_IKKEJA_WORDLIST, merged);
 
   const general = await import(pathToFileURL(`${WORDLIST_DIR}/gemini-code-1784549551419.js`));
   mergeEntries(general.GENERAL_DUTCH_WORDLIST, merged);

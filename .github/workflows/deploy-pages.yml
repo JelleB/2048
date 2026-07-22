@@ -10,12 +10,12 @@ on:
       - 'assets/**'
       - 'index.html'
       - 'bsharp.html'
-      - 'ikea.html'
+      - 'ikke-ja.html'
       - 'static/**'
       - '.nojekyll'
       - 'index.source.html'
       - 'bsharp.source.html'
-      - 'ikea.source.html'
+      - 'ikke-ja.source.html'
   workflow_dispatch:
 
 permissions:
@@ -51,8 +51,8 @@ jobs:
       - name: Normalize dist/bsharp.html from Vite source entry
         run: cp dist/bsharp.source.html dist/bsharp.html
 
-      - name: Normalize dist/ikea.html from Vite source entry
-        run: cp dist/ikea.source.html dist/ikea.html
+      - name: Normalize dist/ikke-ja.html from Vite source entry
+        run: cp dist/ikke-ja.source.html dist/ikke-ja.html
 
       - name: Verify production bundle (not raw /src/main.js)
         shell: bash
@@ -78,7 +78,7 @@ jobs:
         run: |
           cp dist/index.html index.html
           cp dist/bsharp.html bsharp.html
-          cp dist/ikea.html ikea.html
+          cp dist/ikke-ja.html ikke-ja.html
           rm -rf assets static
           cp -r dist/assets assets
           cp -r dist/static static
@@ -88,7 +88,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'chore: sync production index.html and assets for GitHub Pages'
-          file_pattern: index.html bsharp.html ikea.html assets/** static/** .nojekyll
+          file_pattern: index.html bsharp.html ikke-ja.html assets/** static/** .nojekyll
 
       - uses: actions/upload-pages-artifact@v3
         with:

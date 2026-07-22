@@ -1,6 +1,6 @@
 /**
  * Vite config: dev server and Phaser-friendly production build.
- * Multi-page: Phaser collection (index) + BSharp + IKEA escape room.
+ * Multi-page: Phaser collection (index) + BSharp + IKKE-JA escape room.
  */
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
@@ -47,7 +47,7 @@ export default defineConfig(({ command }) => ({
       input: {
         index: 'index.source.html',
         bsharp: 'bsharp.source.html',
-        ikea: 'ikea.source.html',
+        ikkeja: 'ikke-ja.source.html',
       },
     },
   },

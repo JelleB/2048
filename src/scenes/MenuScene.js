@@ -4,7 +4,7 @@
 import Phaser from 'phaser';
 import { makeButton } from '../ui/buttons.js';
 import { getHighScore } from '../persistence/gameStorage.js';
-import { navigateToBSharp, navigateToIkea } from '../navigation.js';
+import { navigateToBSharp, navigateToIkkeJa } from '../navigation.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -48,8 +48,8 @@ export class MenuScene extends Phaser.Scene {
     makeButton(this, width / 2, height * 0.60, btnW, btnH, fontSize, 'Play BSharp', () => {
       navigateToBSharp();
     });
-    makeButton(this, width / 2, height * 0.67, btnW, btnH, fontSize, 'Lost in IKEA', () => {
-      navigateToIkea();
+    makeButton(this, width / 2, height * 0.67, btnW, btnH, fontSize, 'Lost in IKKE-JA', () => {
+      navigateToIkkeJa();
     });
 
     const hintSize = Math.max(11, width * 0.028);
@@ -69,7 +69,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height * 0.90, 'Swipe · Drag · LEDs · Grid · Chords · IKEA co-op escape', {
+      .text(width / 2, height * 0.90, 'Swipe · Drag · LEDs · Grid · Chords · IKKE-JA co-op escape', {
         fontFamily: 'Arial, sans-serif',
         fontSize: `${Math.max(11, width * 0.03)}px`,
         color: '#a8a8c0',

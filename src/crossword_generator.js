@@ -1,5 +1,5 @@
 /**
- * Crossword grid generator and seed-based puzzle builder for Lost in IKEA Level 1.
+ * Crossword grid generator and seed-based puzzle builder for Lost in IKKE-JA Level 1.
  */
 
 /** @typedef {{ word: string, clue: string, id?: number }} WordCluePair */
@@ -411,7 +411,7 @@ export function formatWarehouseLocation(seed, wordIndex, salt = 0) {
 }
 
 /**
- * Assigns unique IKEA-style warehouse locations to placed words.
+ * Assigns unique IKKE-JA-style warehouse locations to placed words.
  * @param {string} seed
  * @param {PlacedWord[]} placedWords
  * @returns {string[]}

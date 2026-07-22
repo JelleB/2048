@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta
+      name="description"
+      content="Lost in IKKE-JA — a co-op escape room for three players. No server required."
+    />
+    <title>Lost in IKKE-JA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"
+      defer
+    ></script>
+  </head>
+  <body>
+    <div id="ikkeja-app" class="ikkeja-app">
+      <header class="ikkeja-header">
+        <nav class="ikkeja-header-nav" aria-label="Game navigation">
+          <button type="button" id="ikkeja-leave-role-btn" class="ikkeja-header-btn" hidden>
+            ↩ Choose role
+          </button>
+          <a id="ikkeja-home-link" class="ikkeja-header-btn ikkeja-home-link" href="#" title="Back to games collection">
+            ← All games
+          </a>
+        </nav>
+        <h1 class="ikkeja-title">Lost in IKKE-JA</h1>
+      </header>
+      <main id="ikkeja-main" class="ikkeja-main" aria-live="polite"></main>
+      <footer id="ikkeja-footer" class="ikkeja-footer" hidden></footer>
+      <div id="ikkeja-toast" class="ikkeja-toast" aria-live="assertive" hidden></div>
+    </div>
+    <script type="module" src="/src/ikkeja/entry.js"></script>
+  </body>
+</html>

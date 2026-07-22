@@ -1,4 +1,4 @@
-export const DUTCH_IKEA_WORDLIST = [
+export const DUTCH_IKKEJA_WORDLIST = [
   // --- TOP CLASSICS & STORE TROPES (1-50) ---
   {"word": "GEHAKTBAL", "clue": "Het beroemdste Zweedse gerecht geserveerd met vossenbessencompote"},
   {"word": "INBUSSLEUTEL", "clue": "Het zeskantige gereedschap dat bij elk pakketje wordt meegeleverd"},

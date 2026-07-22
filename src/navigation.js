@@ -20,10 +20,10 @@ export function navigateToBSharp() {
 }
 
 /**
- * Navigate to the Lost in IKEA co-op escape room (non-Phaser HTML app).
+ * Navigate to the Lost in IKKE-JA co-op escape room (non-Phaser HTML app).
  */
-export function navigateToIkea() {
-  const page = import.meta.env.DEV ? 'ikea.source.html' : 'ikea.html';
+export function navigateToIkkeJa() {
+  const page = import.meta.env.DEV ? 'ikke-ja.source.html' : 'ikke-ja.html';
   window.location.assign(`${appBaseUrl()}${page}`);
 }
 

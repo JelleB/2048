@@ -2,7 +2,7 @@
  * Unit tests for crossword_generator.js
  */
 import { describe, expect, it } from 'vitest';
-import { DUTCH_WORD_CATALOG } from '../src/ikea/data/dutchCrosswords.js';
+import { DUTCH_WORD_CATALOG } from '../src/ikkeja/data/dutchCrosswords.js';
 import {
   CrosswordGenerator,
   generateCrosswordFromSeed,
